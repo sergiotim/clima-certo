@@ -1,5 +1,5 @@
 const apiKey =  '722b6b9783e08cb4542615f6677db610'
-const cityName = prompt('CIDADE')
+// const cityName = prompt('CIDADE')
 const link = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}&lang=pt_br`
 
 

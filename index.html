@@ -1,11 +1,39 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clima Certo</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="bootstrap.css" />
+  </head>
+  <body>
+    <header class="container-fluid">
+      <nav class="row navbar bg-success-subtle">
+        <a href="" class="col-3 navbar-brand text-center">
+          <img
+            src="img/Captura_de_tela_2024-02-11_182619-transformed-removebg-preview.png"
+            alt="Clima Certo"
+            width="150"
+          />
+        </a>
+        <form class="col-6 row" role="search">
+          <input
+            class="col form-control me-2"
+            type="search"
+            placeholder="Digite uma cidade"
+            aria-label="Digite uma cidade"
+          />
+          <button class="col-3 btn btn-outline-success" type="submit">
+            Pesquisar
+          </button>
+        </form>
+        <div class="col-3"></div>
+      </nav>
+    </header>
+
+    <main class="container text-center"></main>
+    <footer></footer>
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
