@@ -1,2 +1,2 @@
 # clima-certo
- App de vizualização de clima
+ App de visualização de clima
