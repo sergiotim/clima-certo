@@ -10,7 +10,7 @@ const temperatureElement = document.getElementById("temperature");
 const descriptionElement = document.getElementById("description");
 const humidityElement = document.getElementById("umidity");
 const windElement = document.getElementById("wind");
-const countryElement = document.getElementById("country")
+const countryElement = document.getElementById("country");
 
 // Functions
 
@@ -23,17 +23,17 @@ async function searchData(cityName) {
 }
 
 async function showData(cityName) {
-
   console.log(searchData(cityName));
   const data = await searchData(cityName);
+  const apiCountry = `https://flagsapi.com/${data.sys.country}/flat/24.png`;
   cityElement.innerText = data.name;
-  countryElement.innerText = `, ${data.sys.country}`
+  countryElement.setAttribute("src", apiCountry);
   temperatureElement.innerText = parseInt(data.main.temp - 273.15);
   descriptionElement.innerText = data.weather[0].description;
   humidityElement.innerText = data.main.humidity;
   windElement.innerText = data.wind.speed;
-  card.classList.remove('invisible')
-  card.classList.add('visible')
+  card.classList.remove("invisible");
+  card.classList.add("visible");
 }
 
 // Events
