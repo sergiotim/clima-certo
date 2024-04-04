@@ -1,3 +1,9 @@
 .form-control:focus{
     border-color: #198754;
 }
+
+#background {
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: auto auto auto 1px;
+}
