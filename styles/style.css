@@ -2,8 +2,13 @@
     border-color: #198754;
 }
 
+header{
+    position: ;
+}
+
 #background {
-    background-size: cover;
+    background-size: contain;
     background-repeat: no-repeat;
-    background-position: auto auto auto 1px;
+    background-position: 50% 50%;
+
 }

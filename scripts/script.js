@@ -25,12 +25,14 @@ async function searchData(cityName) {
 }
 
 async function searchImage(cityName) {
-  const link = `https://api.unsplash.com/search/photos/?client_id=${apiKeyUnsplash}&query=${cityName}`;
+  const link = `https://api.unsplash.com/search/photos/?client_id=${apiKeyUnsplash}&query=${cityName}&orientation=landscape&lang=pt`;
   const request = await fetch(link);
   const dataImage = await request.json()
-  console.log(dataImage.results[0].urls.full)
+  console.log(dataImage)
 
-  return dataImage.results[0].urls.full
+  return dataImage
+
+  // dataImage.results[0].urls.regular
 
 }
 
@@ -50,7 +52,8 @@ async function showData(cityName) {
   card.classList.add("visible");
 
   
-  backgroundElement.style.backgroundImage = `url(${linkBackground})`
+  backgroundElement.style.backgroundImage = `url(${linkBackground.results[0].urls.regular})`
+  backgroundElement.style.backgroundColor = `${linkBackground.results[0].color}`
 
 }
 
