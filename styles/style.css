@@ -4,8 +4,6 @@
 
 
 #background {
-    background-size: contain;
+    background-size: cover;
     background-repeat: no-repeat;
-    background-position: 50% 50%;
-
 }
