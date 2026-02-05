@@ -13,12 +13,14 @@ class WeatherAlert extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $notice;
+
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct($notice)
     {
-        //
+        $this->notice = $notice;
     }
 
     /**
@@ -27,7 +29,7 @@ class WeatherAlert extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Weather Alert',
+            subject: 'Seu Alerta de Clima Diário',
         );
     }
 
@@ -37,7 +39,7 @@ class WeatherAlert extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.weather',
         );
     }
 

@@ -2,39 +2,27 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\WeatherAlert;
 use App\Models\Subscriber;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use PhpParser\Node\Stmt\Return_;
+use Illuminate\Support\Facades\Mail;
 
 class SendWeatherAlerts extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'app:send-weather-alerts';
+    protected $description = 'Busca o clima e envia alertas aos inscritos.';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'It searches for the weather and sends alerts to subscribers.';
-
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         $apiKey = env('OPENWEATHER_API_KEY');
-        $subscribers = Subscriber :: all();
+        $subscribers = Subscriber::all();
 
-        foreach($subscribers as $subscriber){
-            $this->info("Processing: {$subscriber->city}");
+        foreach ($subscribers as $subscriber) {
+            $this->info("Processando: {$subscriber->city}");
 
             // Chamada direta para a API 2.5 usando o nome da cidade (q)
+            // Não precisamos mais de latitude e longitude aqui
             $response = Http::get("https://api.openweathermap.org/data/2.5/weather", [
                 'q' => $subscriber->city,
                 'appid' => $apiKey,
@@ -42,40 +30,42 @@ class SendWeatherAlerts extends Command
                 'lang' => 'pt_br'
             ]);
 
-            if($response->successful()){
-                $data = $response -> json();
+            if ($response->successful()) {
+                $data = $response->json();
                 $temp = $data['main']['temp'];
                 $description = $data['weather'][0]['description'];
 
                 $this->info("Sucesso: {$temp}°C em {$subscriber->city}.");
 
-                // Gerar o texto com a IA
-                $mensagem = $this->generateTextWithLLM($subscriber->city, $temp, $description);
+                // Gerar o texto com a IA (Gemini)
+                $notice = $this->generateTextWithLLM($subscriber->city, $temp, $description);
+                $this->info("Mensagem da IA: " . $notice);
 
-                $this->info("Mensagem da IA: " . $mensagem);
+                // Envio do e-mail
+                Mail::to($subscriber->email)->send(new WeatherAlert($notice));
 
-                // TODO: Aqui entrará o envio do e-mail no próximo passo
-            }else{
-                $this->error("Não consegui encontrar o clima para {$subscriber->city}. Verifique a chave ou o nome da cidade.");
+                $this->info("E-mail enviado para: " . $subscriber->email);
+            } else {
+                $this->error("Erro ao buscar clima para {$subscriber->city}. Verifique a chave da API.");
             }
         }
     }
 
-    private function generateTextWithLLM($city,$temp,$description){
+    private function generateTextWithLLM($city, $temp, $description)
+    {
+        $prompt = "Aja como um assistente de clima amigável. A cidade é {$city}. " .
+                  "A temperatura é de {$temp}°C e o céu está com {$description}. " .
+                  "Escreva uma mensagem curta (máximo 3 frases) para um e-mail matinal, " .
+                  "dando uma dica de vestimenta ou atividade baseada no clima. Não use emojis.";
 
-        $prompt =   "Aja como um assistente de clima amigável. A cidade é {$city}. " .
-                    "A temperatura é de {$temp}°C e o céu está com {$description}. " .
-                    "Escreva uma mensagem curta (máximo 3 frases) para um e-mail matinal, " .
-                    "dando uma dica de vestimenta ou atividade baseada no clima. Não use emojis.";
-
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json'
-        ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . env('GEMINI_API_KEY'), [
+        $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . env('GEMINI_API_KEY'), [
             'contents' => [
                 ['parts' => [['text' => $prompt]]]
             ]
         ]);
 
-        return $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? "Bom dia! Hoje em {$city} faz {$temp}°C.";
+        // Retorna o texto da IA ou uma mensagem padrão caso falhe
+        return $response->json()['candidates'][0]['content']['parts'][0]['text'] 
+               ?? "Bom dia! Hoje em {$city} faz {$temp}°C com {$description}.";
     }
 }
