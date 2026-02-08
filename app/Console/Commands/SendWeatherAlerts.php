@@ -20,11 +20,12 @@ class SendWeatherAlerts extends Command
         $apiKey = env('OPENWEATHER_API_KEY');
         $subscribers = Subscriber::all();
 
+        
+
         foreach ($subscribers as $subscriber) {
             $this->info("Processando: {$subscriber->city}");
 
             // Chamada direta para a API 2.5 usando o nome da cidade (q)
-            // Não precisamos mais de latitude e longitude aqui
             $response = Http::get('https://api.openweathermap.org/data/2.5/weather', [
                 'q' => $subscriber->city,
                 'appid' => $apiKey,
@@ -33,12 +34,19 @@ class SendWeatherAlerts extends Command
             ]);
 
             if ($response->successful()) {
-                $data = $response->json();
+                $weatherData = $response->json();
 
+                $offset = $weatherData['timezone'];
+
+                $dataLocaleCity = now()->addSecond($offset)->locale('pt_BR');
+
+                $formatedData = $dataLocaleCity->translatedFormat('l, d \d\e F \d\e Y');
+
+                
                 $this->info("Dados recebidos para {$subscriber->city}. Gerando texto com IA...");
 
                 // Gerar o texto com a IA (Gemini)
-                $notice = $this->generateTextWithLLM($subscriber->city, $data);
+                $notice = $this->generateTextWithLLM($subscriber->city, $weatherData, $formatedData);
                 $this->info('Mensagem da IA: '.$notice);
 
                 // Envio do e-mail
@@ -51,31 +59,37 @@ class SendWeatherAlerts extends Command
         }
     }
 
-    private function generateTextWithLLM($city, $weatherData)
+    private function generateTextWithLLM($city, $weatherData,$date)
     {
         $jsonDetails = json_encode($weatherData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         
         
-        $prompt = "Aja como um assistente de clima pessoal e muito amigável para a cidade de {$city}. " .
-                  "Abaixo estão os dados técnicos brutos do clima atual: \n\n" .
-                  $jsonDetails . "\n\n" .
-                  "Com base nesses dados (especialmente temperatura, sensação térmica, umidade e vento), " .
-                  "escreva uma mensagem de e-mail matinal curta e humana. " .
-                  "No texto, você deve: \n" .
-                  "1. Comentar sobre o clima atual e a sensação térmica real.\n" .
-                  "2. Dar uma dica prática do que a pessoa deve vestir ou levar (ex: guarda-chuva, óculos de sol).\n" .
-                  "3. Dar um conselho de saúde ou atividade para o dia em {$city}.\n" .
-                  "Seja acolhedor.";
+        $prompt = "
+        ### PERSONA
+        Aja como um assistente de clima pessoal e local, extremamente amigável, humano e atencioso.
+
+        ### CONTEXTO
+        - Cidade: {$city}
+        - Data e Dia da Semana: {$date}
+        - Dados Técnicos (JSON): {$jsonDetails}
+
+        ### TAREFA
+        Escreva um e-mail matinal personalizado para um morador de {$city} baseando-se nos dados acima.
+
+        ### REGRAS DE CONTEÚDO
+        1. SAUDAÇÃO: Comece com uma saudação calorosa mencionando o dia da semana (ex: 'Feliz terça-feira' ou 'Bom sábado').
+        2. TOM DE VOZ: Use o dia da semana para definir o tom. Se for dia útil, foque em motivação e produtividade. Se for fim de semana, foque em descanso, lazer e atividades ao ar livre.
+        3. ANÁLISE TÉCNICA HUMANA: Não apenas repita os números. Explique a sensação térmica e a umidade de forma prática (ex: 'apesar dos 28 graus, a sensação é de mais calor devido à umidade').
+        4. RECOMENDAÇÕES: Dê uma dica específica de vestimenta e uma dica de saúde ou lazer em {$city}.
+
+        ### RESTRIÇÕES CRÍTICAS (NÃO QUEBRAR)
+        - NÃO inclua a linha de 'Assunto:' no corpo do texto.
+        - NÃO use emojis.
+        - NÃO use formatação matemática ou científica (proibido usar $, {}, ^, LaTeX ou Markdown complexo). Escreva apenas '28 graus' ou '28°C'.
+        ";
 
 
-        // $response = Http::post('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key='.env('GEMINI_API_KEY'), [
-        //     'contents' => [
-        //         [   'parts' => [
-        //                 ['text' => $prompt]
-        //             ]
-        //         ],
-        //     ],
-        // ]);
+
         $response = Gemini::generativeModel(model:'gemini-2.5-flash-lite')->generateContent($prompt);
 
         
