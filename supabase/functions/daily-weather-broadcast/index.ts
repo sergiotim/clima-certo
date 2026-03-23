@@ -47,23 +47,20 @@ export default async function reqHandler(req: Request) {
       subscribers.map((subscriber) =>
         limit(async () => {
           try {
-            // A. Fetch weather data for the city
-            // Utilizando o nome da cidade ou coordenadas se estiverem salvas no banco
-            // Assumiremos que 'city' tem o nome da cidade (ou que há lat/lon).
-            // Caso tenha lat e lon, mude a query q= para lat= e lon=
-            const weatherUrl = `https://api.openweathermap.org/data/3.0/onecall?lat=${subscriber.lat || -23.55}&lon=${subscriber.lon || -46.63}&exclude=minutely,hourly,alerts&units=metric&lang=pt_br&appid=${OPENWEATHER_API_KEY}`;
+            // A. Fetch weather data for the city (free 2.5 API)
+            const cityQuery = subscriber.city || "São Paulo";
+            const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityQuery)}&units=metric&lang=pt_br&appid=${OPENWEATHER_API_KEY}`;
             const weatherResponse = await fetch(weatherUrl);
             
             if (!weatherResponse.ok) {
-                // If you don't use One Call (requires CC), fallback to 2.5/weather
-                throw new Error("Failed to fetch weather data from OpenWeatherMap");
+                throw new Error(`Failed to fetch weather data for ${cityQuery}: ${weatherResponse.status}`);
             }
             const weatherData = await weatherResponse.json();
 
-            // Extract relevant daily/current weather info
-            const currentTemp = weatherData.current?.temp;
-            const weatherDesc = weatherData.current?.weather?.[0]?.description;
-            const weatherContext = `Temperatura atual: ${currentTemp}°C. Condições: ${weatherDesc}.`;
+            // Extract weather info from 2.5 API response
+            const currentTemp = weatherData.main?.temp;
+            const weatherDesc = weatherData.weather?.[0]?.description;
+            const weatherContext = `Cidade: ${cityQuery}. Temperatura atual: ${currentTemp}°C. Condições: ${weatherDesc}.`;
 
             // B. Generate motivational greeting with Gemini
             const prompt = `Atue como um mentor motivacional. Com base nestes dados climáticos: [ ${weatherContext} ], escreva uma saudação matinal de até 3 parágrafos que inspire o usuário a ter um dia produtivo, relacionando o clima com mindset positivo e foco. Dirija-se de forma amigável!`;
