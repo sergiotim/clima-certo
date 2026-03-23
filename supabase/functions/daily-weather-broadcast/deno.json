@@ -1,0 +1,11 @@
+{
+  "tasks": {
+    "start": "deno run --env --allow-env --allow-net --allow-read index.ts"
+  },
+  "imports": {
+    "@google/genai": "npm:@google/genai@0.1.2",
+    "resend": "npm:resend@3.2.0",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.39.8",
+    "p-limit": "npm:p-limit@5.0.0"
+  }
+}

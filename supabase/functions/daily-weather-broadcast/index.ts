@@ -1,0 +1,122 @@
+import { Resend } from "resend";
+import { GoogleGenAI } from "@google/genai";
+import { createClient } from "@supabase/supabase-js";
+import pLimit from "p-limit";
+
+import { generateWeatherEmailHtml } from "./email-template.ts";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
+const OPENWEATHER_API_KEY = Deno.env.get("OPENWEATHER_API_KEY") ?? "";
+
+// Create clients
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const resend = new Resend(RESEND_API_KEY);
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+const limit = pLimit(5); // Process up to 5 emails concurrently
+
+export default async function reqHandler(req: Request) {
+  // Verificação básica de Authorization (opcional, dependendo de como for chamado o cron)
+  // O cron pg_net pode passar chaves secretas no header para validar a chamada
+
+  try {
+    // 1. Fetch active subscribers
+    const { data: subscribers, error: subsError } = await supabase
+      .from("newsletter_subscribers")
+      .select("*")
+      .eq("active", true);
+
+    if (subsError) {
+      throw new Error(`Error fetching subscribers: ${subsError.message}`);
+    }
+
+    if (!subscribers || subscribers.length === 0) {
+      return new Response(JSON.stringify({ message: "No active subscribers found." }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    console.log(`Processing ${subscribers.length} subscribers...`);
+
+    // 2. Process each subscriber concurrently with a limit
+    const results = await Promise.all(
+      subscribers.map((subscriber) =>
+        limit(async () => {
+          try {
+            // A. Fetch weather data for the city
+            // Utilizando o nome da cidade ou coordenadas se estiverem salvas no banco
+            // Assumiremos que 'city' tem o nome da cidade (ou que há lat/lon).
+            // Caso tenha lat e lon, mude a query q= para lat= e lon=
+            const weatherUrl = `https://api.openweathermap.org/data/3.0/onecall?lat=${subscriber.lat || -23.55}&lon=${subscriber.lon || -46.63}&exclude=minutely,hourly,alerts&units=metric&lang=pt_br&appid=${OPENWEATHER_API_KEY}`;
+            const weatherResponse = await fetch(weatherUrl);
+            
+            if (!weatherResponse.ok) {
+                // If you don't use One Call (requires CC), fallback to 2.5/weather
+                throw new Error("Failed to fetch weather data from OpenWeatherMap");
+            }
+            const weatherData = await weatherResponse.json();
+
+            // Extract relevant daily/current weather info
+            const currentTemp = weatherData.current?.temp;
+            const weatherDesc = weatherData.current?.weather?.[0]?.description;
+            const weatherContext = `Temperatura atual: ${currentTemp}°C. Condições: ${weatherDesc}.`;
+
+            // B. Generate motivational greeting with Gemini
+            const prompt = `Atue como um mentor motivacional. Com base nestes dados climáticos: [ ${weatherContext} ], escreva uma saudação matinal de até 3 parágrafos que inspire o usuário a ter um dia produtivo, relacionando o clima com mindset positivo e foco. Dirija-se de forma amigável!`;
+            
+            const aiResponse = await ai.models.generateContent({
+                model: 'gemini-1.5-pro',
+                contents: prompt,
+            });
+            
+            const motivationalMessage = aiResponse.text;
+
+            // C. Prepare email content
+            // Assuming we have user's email and a unique JWT or UUID for unsubscribe
+            // Constroi link dinâmico de descadastramento
+            const appUrl = Deno.env.get("APP_URL") || "https://clima-certo.vercel.app";
+            const unsubscribeLink = `${appUrl}/unsubscribe?token=${subscriber.id}`;
+
+            const emailHtml = generateWeatherEmailHtml(
+              motivationalMessage || "Que você tenha um ótimo dia!", 
+              unsubscribeLink
+            );
+
+            // D. Send Email via Resend
+            const { error: resendError } = await resend.emails.send({
+              from: "Clima Certo <equipe@climacerto.app>", // Substitua por seu domínio configurado
+              to: subscriber.email,
+              subject: "Bom dia! Seu Clima Certo de Hoje ☀️",
+              html: emailHtml,
+            });
+
+            if (resendError) throw resendError;
+
+            return { email: subscriber.email, status: "success" };
+          } catch (err: any) {
+            console.error(`Failed to process subscriber ${subscriber.email}: `, err);
+            return { email: subscriber.email, status: "error", error: err.message };
+          }
+        })
+      )
+    );
+
+    return new Response(JSON.stringify({ results }), {
+      headers: { "Content-Type": "application/json" },
+      status: 200,
+    });
+  } catch (error: any) {
+    console.error("Function error:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+}
+
+// Em Deno Deploy / Supabase Edge Runtime precisamos de um Deno.serve:
+Deno.serve(reqHandler);
