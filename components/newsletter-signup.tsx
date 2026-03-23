@@ -8,39 +8,45 @@ import { Mail, CheckCircle2 } from "lucide-react";
 
 export function NewsletterSignup() {
   const [email, setEmail] = useState("");
+  const [country, setCountry] = useState("BR");
   const [states, setStates] = useState<{ id: number; sigla: string; nome: string }[]>([]);
   const [cities, setCities] = useState<{ id: number; nome: string }[]>([]);
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isLoadingCity, setIsLoadingCity] = useState(false);
 
   useEffect(() => {
-    fetch("https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome")
-      .then((res) => res.json())
-      .then((data) => setStates(data))
-      .catch((err) => console.error(err));
-  }, []);
+    if (country === "BR") {
+      fetch("https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome")
+        .then((res) => res.json())
+        .then((data) => setStates(data))
+        .catch((err) => console.error(err));
+    }
+  }, [country]);
 
   useEffect(() => {
-    if (!selectedState) {
-      setCities([]);
-      setSelectedCity("");
-      return;
+    if (country === "BR") {
+      if (!selectedState) {
+        setCities([]);
+        setSelectedCity("");
+        return;
+      }
+      setIsLoadingCity(true);
+      fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`)
+        .then((res) => res.json())
+        .then((data) => {
+          setCities(data);
+          setIsLoadingCity(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setIsLoadingCity(false);
+        });
     }
-    setIsLoadingCity(true);
-    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`)
-      .then((res) => res.json())
-      .then((data) => {
-        setCities(data);
-        setIsLoadingCity(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setIsLoadingCity(false);
-      });
-  }, [selectedState]);
+  }, [selectedState, country]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,20 +87,40 @@ export function NewsletterSignup() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          
           <div className="flex gap-2">
             <select
-              value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
+              value={country}
+              onChange={(e) => {
+                setCountry(e.target.value);
+                setSelectedState("");
+                setSelectedCity("");
+              }}
               className="w-1/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none"
               required
             >
-              <option value="" disabled className="text-slate-500 bg-slate-900">UF</option>
-              {states.map((uf) => (
-                <option key={uf.id} value={uf.sigla} className="bg-slate-900 text-white">
-                  {uf.sigla}
-                </option>
-              ))}
+              <option value="BR" className="bg-slate-900 text-white">Brasil</option>
+              <option value="OTHER" className="bg-slate-900 text-white">Outros</option>
             </select>
+
+            {country === "BR" ? (
+              <select
+                value={selectedState}
+                onChange={(e) => setSelectedState(e.target.value)}
+                className="w-2/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none"
+                required
+              >
+                <option value="" disabled className="text-slate-500 bg-slate-900">UF / Estado</option>
+                {states.map((uf) => (
+                  <option key={uf.id} value={uf.sigla} className="bg-slate-900 text-white">
+                    {uf.sigla} - {uf.nome}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+          </div>
+
+          {country === "BR" ? (
             <select
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
@@ -111,7 +137,17 @@ export function NewsletterSignup() {
                 </option>
               ))}
             </select>
-          </div>
+          ) : (
+            <Input 
+              type="text" 
+              placeholder="Digite a cidade e país (ex: Roma, IT)" 
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              required
+              className="bg-black/40 border-white/10"
+            />
+          )}
+
           <Input 
             type="email" 
             placeholder="seu@email.com.br" 
@@ -120,7 +156,7 @@ export function NewsletterSignup() {
             required
             className="bg-black/40 border-white/10"
           />
-          <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
+          <Button type="submit" className="w-full mt-2" disabled={isSubmitting || !selectedCity}>
             {isSubmitting ? "Inscrevendo..." : "Inscrever-se"}
           </Button>
         </form>

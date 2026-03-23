@@ -19,6 +19,32 @@ export async function getWeatherData(city: string) {
     }
 
     const data = await res.json();
+    // Calcular Ponto de Orvalho via fórmula de Magnus (usando temp e umidade do endpoint gratuito)
+    try {
+      const temp = data.main.temp;
+      const humidity = data.main.humidity;
+      const a = 17.27;
+      const b = 237.7;
+      const alpha = ((a * temp) / (b + temp)) + Math.log(humidity / 100);
+      data.dew_point = Math.round(((b * alpha) / (a - alpha)) * 10) / 10;
+    } catch (err) {
+      console.warn("Could not calculate dew point", err);
+    }
+
+    // Buscar Índice UV usando a API gratuita do OpenWeatherMap (2.5)
+    try {
+      const uvRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/uvi?lat=${data.coord.lat}&lon=${data.coord.lon}&appid=${apiKey}`,
+        { next: { revalidate: 300 } }
+      );
+      if (uvRes.ok) {
+        const uvData = await uvRes.json();
+        data.uvi = uvData.value;
+      }
+    } catch (err) {
+      console.warn("Could not fetch UV index", err);
+    }
+    
     return data;
   } catch (error) {
     console.error("Failed to fetch weather data:", error);

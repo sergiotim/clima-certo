@@ -7,8 +7,8 @@ export function DetailsCard({ data }: { data: any }) {
     { label: "Umidade", value: `${data.main.humidity}%`, icon: Droplet },
     { label: "Pressão", value: `${data.main.pressure} hPa`, icon: Gauge },
     { label: "Visibilidade", value: `${(data.visibility / 1000).toFixed(1)} km`, icon: Eye },
-    { label: "Índice UV", value: "N/A", icon: Sun },
-    { label: "Ponto de Orvalho", value: "N/A", icon: Snowflake },
+    { label: "Índice UV", value: data.uvi !== undefined ? data.uvi : "N/A", icon: Sun },
+    { label: "Ponto de Orvalho", value: data.dew_point !== undefined ? `${Math.round(data.dew_point)}°C` : "N/A", icon: Snowflake },
   ];
 
   return (
