@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 function UnsubscribeContent() {
   const searchParams = useSearchParams();
@@ -12,18 +13,31 @@ function UnsubscribeContent() {
   const [status, setStatus] = useState<"loading" | "success" | "invalid">("loading");
 
   useEffect(() => {
-    // Validate token
     if (!token || token.trim().length === 0) {
       setStatus("invalid");
       return;
     }
 
-    // Simulate API call to unsubscribe
-    const timer = setTimeout(() => {
-      setStatus("success");
-    }, 2000);
+    async function unsubscribe() {
+      try {
+        const { error, count } = await supabase
+          .from("newsletter_subscribers")
+          .update({ active: false })
+          .eq("id", token!)
+          .eq("active", true);
 
-    return () => clearTimeout(timer);
+        if (error || count === 0) {
+          setStatus("invalid");
+          return;
+        }
+
+        setStatus("success");
+      } catch {
+        setStatus("invalid");
+      }
+    }
+
+    unsubscribe();
   }, [token]);
 
   return (

@@ -17,6 +17,7 @@ export function NewsletterSignup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isLoadingCity, setIsLoadingCity] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (country === "BR") {
@@ -48,15 +49,37 @@ export function NewsletterSignup() {
     }
   }, [selectedState, country]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCity || !email) return;
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    setError("");
+
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          city: selectedCity,
+          country,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Erro ao realizar inscrição.");
+        setIsSubmitting(false);
+        return;
+      }
+
       setIsSubmitting(false);
       setSuccess(true);
-    }, 1500);
+    } catch {
+      setError("Falha de conexão. Tente novamente.");
+      setIsSubmitting(false);
+    }
   };
 
   if (success) {
@@ -156,6 +179,13 @@ export function NewsletterSignup() {
             required
             className="bg-black/40 border-white/10"
           />
+
+          {error && (
+            <p className="text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-md border border-red-500/20">
+              {error}
+            </p>
+          )}
+
           <Button type="submit" className="w-full mt-2" disabled={isSubmitting || !selectedCity}>
             {isSubmitting ? "Inscrevendo..." : "Inscrever-se"}
           </Button>
