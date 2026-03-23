@@ -33,7 +33,9 @@ export default async function Home(props: { searchParams: SearchParams }) {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-white tracking-tight">Visão Geral</h1>
             <div className="text-sm text-indigo-200 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
-              Dados atualizados há 2 min
+              {weatherData?.dt
+                ? `Dados atualizados há ${Math.max(1, Math.round((Date.now() / 1000 - weatherData.dt) / 60))} min`
+                : "Dados atualizados"}
             </div>
           </div>
           

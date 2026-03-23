@@ -1,11 +1,47 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sunrise, Sunset } from "lucide-react";
 
 export function SunCard({ data }: { data: any }) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60_000); // Atualiza a cada minuto
+    return () => clearInterval(interval);
+  }, []);
+
   if (!data) return null;
-  const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  
+
+  const sunriseMs = data.sys.sunrise * 1000;
+  const sunsetMs = data.sys.sunset * 1000;
+
+  const sunrise = new Date(sunriseMs).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const sunset = new Date(sunsetMs).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  // Calcular progresso do dia (entre nascer e pôr do sol)
+  const totalDaylight = sunsetMs - sunriseMs;
+  const elapsed = now - sunriseMs;
+  const progress = Math.max(0, Math.min(1, elapsed / totalDaylight));
+
+  // Calcular quanto falta para o pôr do sol
+  const remaining = sunsetMs - now;
+  let remainingText = "";
+
+  if (remaining <= 0) {
+    remainingText = "O sol já se pôs";
+  } else if (now < sunriseMs) {
+    const untilSunrise = sunriseMs - now;
+    const h = Math.floor(untilSunrise / 3_600_000);
+    const m = Math.floor((untilSunrise % 3_600_000) / 60_000);
+    remainingText = `Faltam ${h}h e ${m}m para o nascer do sol`;
+  } else {
+    const h = Math.floor(remaining / 3_600_000);
+    const m = Math.floor((remaining % 3_600_000) / 60_000);
+    remainingText = `Faltam ${h}h e ${m}m para o pôr do sol`;
+  }
+
   return (
     <Card className="h-full relative overflow-hidden">
       <div className="absolute -bottom-10 -right-10 opacity-5">
@@ -33,10 +69,12 @@ export function SunCard({ data }: { data: any }) {
         </div>
         
         <div className="mt-4 relative w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-          {/* Barra de Progresso Simbolizando a passagem do dia */}
-          <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 via-amber-400 to-indigo-600 rounded-full w-3/4" />
+          <div
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 via-amber-400 to-indigo-600 rounded-full transition-all duration-1000"
+            style={{ width: `${Math.round(progress * 100)}%` }}
+          />
         </div>
-        <p className="text-xs text-slate-400 mt-2 text-center">Faltam 2h e 53m para o pôr do sol</p>
+        <p className="text-xs text-slate-400 mt-2 text-center">{remainingText}</p>
       </CardContent>
     </Card>
   );
