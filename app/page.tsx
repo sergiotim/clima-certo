@@ -4,8 +4,18 @@ import { WindCard } from "@/components/dashboard/wind-card";
 import { SunCard } from "@/components/dashboard/sun-card";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { Header } from "@/components/layout/header";
+import { WeatherIcon } from "@/components/weather-icon";
 
-export default function Home() {
+import { getWeatherData, getDailyForecast } from "@/lib/weather";
+
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+export default async function Home(props: { searchParams: SearchParams }) {
+  const searchParams = await props.searchParams;
+  const city = typeof searchParams.city === "string" ? searchParams.city : "São Paulo";
+  const weatherData = await getWeatherData(city);
+  const forecastData = await getDailyForecast(city);
+
   return (
     <div className="min-h-screen bg-[#070B14]">
       <Header />
@@ -29,17 +39,17 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-8 h-full">
-              <TemperatureCard />
+              <TemperatureCard data={weatherData} />
             </div>
             <div className="lg:col-span-4 h-full">
-              <SunCard />
+              <SunCard data={weatherData} />
             </div>
             
             <div className="lg:col-span-6 h-full">
-              <DetailsCard />
+              <DetailsCard data={weatherData} />
             </div>
             <div className="lg:col-span-6 h-full">
-              <WindCard />
+              <WindCard data={weatherData} />
             </div>
           </div>
         </div>
@@ -52,19 +62,15 @@ export default function Home() {
             <h3 className="font-medium text-white mb-2 text-sm">Previsão 5 Dias</h3>
             <p className="text-xs text-slate-400 mb-4">Acompanhe a tendência semanal.</p>
             <div className="space-y-3">
-              {[
-                { day: "Seg", icon: "🌤️", temp: "28°/19°" },
-                { day: "Ter", icon: "🌧️", temp: "25°/18°" },
-                { day: "Qua", icon: "☀️", temp: "30°/20°" },
-                { day: "Qui", icon: "⛅", temp: "29°/20°" },
-                { day: "Sex", icon: "⛈️", temp: "24°/17°" },
-              ].map((item, i) => (
+              {forecastData ? forecastData.map((item, i) => (
                 <div key={i} className="flex justify-between items-center text-sm">
-                  <span className="text-indigo-200 w-8">{item.day}</span>
-                  <span className="text-lg">{item.icon}</span>
-                  <span className="text-slate-300 font-medium">{item.temp}</span>
+                  <span className="text-indigo-200 w-8">{item.dayName}</span>
+                  <span className="text-lg"><WeatherIcon code={item.icon} size={20} className="text-white" /></span>
+                  <span className="text-slate-300 font-medium">{item.tempMax}°/{item.tempMin}°</span>
                 </div>
-              ))}
+              )) : (
+                <div className="text-sm text-slate-400">Dados não disponíveis</div>
+              )}
             </div>
           </div>
         </aside>

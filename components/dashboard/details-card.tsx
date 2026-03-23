@@ -1,13 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Droplet, Gauge, Eye, Sun, Snowflake } from "lucide-react";
 
-export function DetailsCard() {
+export function DetailsCard({ data }: { data: any }) {
+  if (!data) return null;
   const details = [
-    { label: "Umidade", value: "78%", icon: Droplet },
-    { label: "Pressão", value: "1012 hPa", icon: Gauge },
-    { label: "Visibilidade", value: "8 km", icon: Eye },
-    { label: "Índice UV", value: "4 (Moderado)", icon: Sun },
-    { label: "Ponto de Orvalho", value: "18°", icon: Snowflake },
+    { label: "Umidade", value: `${data.main.humidity}%`, icon: Droplet },
+    { label: "Pressão", value: `${data.main.pressure} hPa`, icon: Gauge },
+    { label: "Visibilidade", value: `${(data.visibility / 1000).toFixed(1)} km`, icon: Eye },
+    { label: "Índice UV", value: "N/A", icon: Sun },
+    { label: "Ponto de Orvalho", value: "N/A", icon: Snowflake },
   ];
 
   return (

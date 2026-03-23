@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,43 @@ import { Mail, CheckCircle2 } from "lucide-react";
 
 export function NewsletterSignup() {
   const [email, setEmail] = useState("");
-  const [city, setCity] = useState("");
+  const [states, setStates] = useState<{ id: number; sigla: string; nome: string }[]>([]);
+  const [cities, setCities] = useState<{ id: number; nome: string }[]>([]);
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isLoadingCity, setIsLoadingCity] = useState(false);
+
+  useEffect(() => {
+    fetch("https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome")
+      .then((res) => res.json())
+      .then((data) => setStates(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedState) {
+      setCities([]);
+      setSelectedCity("");
+      return;
+    }
+    setIsLoadingCity(true);
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`)
+      .then((res) => res.json())
+      .then((data) => {
+        setCities(data);
+        setIsLoadingCity(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setIsLoadingCity(false);
+      });
+  }, [selectedState]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedCity || !email) return;
     setIsSubmitting(true);
     // Simulate API call
     setTimeout(() => {
@@ -29,7 +60,7 @@ export function NewsletterSignup() {
           <CheckCircle2 size={48} className="text-emerald-400 mb-4" />
           <h3 className="text-xl font-medium text-white mb-2">Inscrição Concluída!</h3>
           <p className="text-sm text-indigo-200">
-            Você receberá atualizações diárias sobre {city} no email {email}.
+            Você receberá atualizações diárias sobre {selectedCity} no email {email}.
           </p>
         </CardContent>
       </Card>
@@ -50,14 +81,37 @@ export function NewsletterSignup() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <Input 
-            type="text" 
-            placeholder="Sua Cidade (Ex: São Paulo)" 
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            required
-            className="bg-black/40 border-white/10"
-          />
+          <div className="flex gap-2">
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="w-1/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none"
+              required
+            >
+              <option value="" disabled className="text-slate-500 bg-slate-900">UF</option>
+              {states.map((uf) => (
+                <option key={uf.id} value={uf.sigla} className="bg-slate-900 text-white">
+                  {uf.sigla}
+                </option>
+              ))}
+            </select>
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              disabled={!selectedState || isLoadingCity}
+              className="w-full h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none disabled:opacity-50"
+              required
+            >
+              <option value="" disabled className="text-slate-500 bg-slate-900">
+                {isLoadingCity ? "Carregando..." : "Sua Cidade"}
+              </option>
+              {cities.map((city) => (
+                <option key={city.id} value={city.nome} className="bg-slate-900 text-white">
+                  {city.nome}
+                </option>
+              ))}
+            </select>
+          </div>
           <Input 
             type="email" 
             placeholder="seu@email.com.br" 
