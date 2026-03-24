@@ -62,15 +62,21 @@ export default async function reqHandler(req: Request) {
             const weatherDesc = weatherData.weather?.[0]?.description;
             const weatherContext = `Cidade: ${cityQuery}. Temperatura atual: ${currentTemp}°C. Condições: ${weatherDesc}.`;
 
-            // B. Generate motivational greeting with Gemini
-            const prompt = `Atue como um mentor motivacional. Com base nestes dados climáticos: [ ${weatherContext} ], escreva uma saudação matinal de até 3 parágrafos que inspire o usuário a ter um dia produtivo, relacionando o clima com mindset positivo e foco. Dirija-se de forma amigável!`;
-            
-            const aiResponse = await ai.models.generateContent({
-                model: 'gemini-1.5-pro',
-                contents: prompt,
-            });
-            
-            const motivationalMessage = aiResponse.text;
+            // B. Generate motivational greeting with Gemini (optional — fallback if quota exceeded)
+            let motivationalMessage: string;
+            try {
+              const prompt = `Atue como um mentor motivacional. Com base nestes dados climáticos: [ ${weatherContext} ], escreva uma saudação matinal de até 3 parágrafos que inspire o usuário a ter um dia produtivo, relacionando o clima com mindset positivo e foco. Dirija-se de forma amigável!`;
+              
+              const aiResponse = await ai.models.generateContent({
+                  model: 'gemini-2.0-flash',
+                  contents: prompt,
+              });
+              
+              motivationalMessage = aiResponse.text || `Bom dia! Hoje em ${cityQuery} estamos com ${currentTemp}°C e ${weatherDesc}. Que você tenha um excelente dia!`;
+            } catch (aiErr) {
+              console.warn(`Gemini AI unavailable, using fallback for ${subscriber.email}:`, aiErr);
+              motivationalMessage = `☀️ Bom dia!\n\nHoje em ${cityQuery} estamos com ${Math.round(currentTemp)}°C e ${weatherDesc}.\n\nQue você tenha um dia produtivo e cheio de energia!`;
+            }
 
             // C. Prepare email content
             // Assuming we have user's email and a unique JWT or UUID for unsubscribe
@@ -85,7 +91,7 @@ export default async function reqHandler(req: Request) {
 
             // D. Send Email via Resend
             const { error: resendError } = await resend.emails.send({
-              from: "Clima Certo <equipe@climacerto.app>", // Substitua por seu domínio configurado
+              from: "Clima Certo <onboarding@resend.dev>", // Teste: troque para seu domínio verificado no Resend
               to: subscriber.email,
               subject: "Bom dia! Seu Clima Certo de Hoje ☀️",
               html: emailHtml,
