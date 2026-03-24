@@ -68,7 +68,7 @@ export default async function reqHandler(req: Request) {
               const prompt = `Atue como um mentor motivacional. Com base nestes dados climáticos: [ ${weatherContext} ], escreva uma saudação matinal de até 3 parágrafos que inspire o usuário a ter um dia produtivo, relacionando o clima com mindset positivo e foco. Dirija-se de forma amigável!`;
               
               const aiResponse = await ai.models.generateContent({
-                  model: 'gemini-2.0-flash',
+                  model: 'gemini-2.5-flash',
                   contents: prompt,
               });
               
