@@ -16,7 +16,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const resend = new Resend(RESEND_API_KEY);
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-const limit = pLimit(5); // Process up to 5 emails concurrently
+// O tier gratuito do Gemini (AI Studio) permite 15 requisições por minuto (15 RPM).
+// Processamos 1 email por vez para garantir o respeito aos limites e evitar 429.
+const limit = pLimit(1); 
 
 export default async function reqHandler(req: Request) {
   // Verificação básica de Authorization (opcional, dependendo de como for chamado o cron)
@@ -67,6 +69,9 @@ export default async function reqHandler(req: Request) {
             try {
               const prompt = `Atue como um mentor motivacional. Com base nestes dados climáticos: [ ${weatherContext} ], escreva uma saudação matinal de até 3 parágrafos que inspire o usuário a ter um dia produtivo, relacionando o clima com mindset positivo e foco. Dirija-se de forma amigável!`;
               
+              // Pausa de 4 segundos para não exceder o limite gratuito de 15 RPM (Requests Per Minute) da API do Gemini
+              await new Promise(resolve => setTimeout(resolve, 4000));
+
               const aiResponse = await ai.models.generateContent({
                   model: 'gemini-2.5-flash',
                   contents: prompt,
