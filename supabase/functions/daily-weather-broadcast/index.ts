@@ -47,7 +47,22 @@ async function sendBrevoEmail(to: { email: string; name?: string }, subject: str
   return response.json();
 }
 
-export default async function reqHandler(req: Request) {
+interface Subscriber {
+  id: string;
+  email: string;
+  city: string;
+  country?: string;
+  active: boolean;
+}
+
+interface Result {
+  email: string;
+  city: string;
+  status: "success" | "error";
+  error?: string;
+}
+
+export default async function reqHandler() {
   try {
     // 1. Fetch active subscribers
     const { data: subscribers, error: subsError } = await supabase
@@ -59,24 +74,26 @@ export default async function reqHandler(req: Request) {
       throw new Error(`Error fetching subscribers: ${subsError.message}`);
     }
 
-    if (!subscribers || subscribers.length === 0) {
+    const typedSubscribers = subscribers as Subscriber[];
+
+    if (!typedSubscribers || typedSubscribers.length === 0) {
       return new Response(JSON.stringify({ message: "No active subscribers found." }), {
         headers: { "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    console.log(`Processing ${subscribers.length} total subscribers...`);
+    console.log(`Processing ${typedSubscribers.length} total subscribers...`);
 
     // 2. Group subscribers by city to optimize API usage
-    const subscribersByCity: Record<string, any[]> = {};
-    subscribers.forEach(sub => {
+    const subscribersByCity: Record<string, Subscriber[]> = {};
+    typedSubscribers.forEach(sub => {
       const city = sub.city || "São Paulo";
       if (!subscribersByCity[city]) subscribersByCity[city] = [];
       subscribersByCity[city].push(sub);
     });
 
-    const results: any[] = [];
+    const results: Result[] = [];
     const appUrl = Deno.env.get("APP_URL") || "https://climacerto.vercel.app";
 
     // 3. Process each city group
@@ -115,8 +132,9 @@ export default async function reqHandler(req: Request) {
           if (!motivationalMessage) throw new Error("Empty message from Groq");
           
           console.log(`Groq message generated for ${city}`);
-        } catch (aiErr: any) {
-          console.error(`Groq AI Error for city ${city}:`, aiErr.message);
+        } catch (aiErr: unknown) {
+          const errorMessage = aiErr instanceof Error ? aiErr.message : "Unknown AI error";
+          console.error(`Groq AI Error for city ${city}:`, errorMessage);
           motivationalMessage = `☀️ Bom dia!\n\nHoje em ${city} estamos com ${Math.round(currentTemp)}°C e ${weatherDesc}.\n\nQue você tenha um dia produtivo e cheio de energia!`;
         }
 
@@ -133,16 +151,18 @@ export default async function reqHandler(req: Request) {
             );
 
             results.push({ email: subscriber.email, city, status: "success" });
-          } catch (emailErr: any) {
-            console.error(`Failed to send email to ${subscriber.email}: `, emailErr.message);
-            results.push({ email: subscriber.email, city, status: "error", error: emailErr.message });
+          } catch (emailErr: unknown) {
+            const errorMessage = emailErr instanceof Error ? emailErr.message : "Unknown email error";
+            console.error(`Failed to send email to ${subscriber.email}: `, errorMessage);
+            results.push({ email: subscriber.email, city, status: "error", error: errorMessage });
           }
         }
-      } catch (cityErr: any) {
-        console.error(`Critical error processing city ${city}:`, cityErr.message);
+      } catch (cityErr: unknown) {
+        const errorMessage = cityErr instanceof Error ? cityErr.message : "Unknown city error";
+        console.error(`Critical error processing city ${city}:`, errorMessage);
         // Mark all subscribers in this city as failed
         citySubscribers.forEach(sub => {
-          results.push({ email: sub.email, city, status: "error", error: cityErr.message });
+          results.push({ email: sub.email, city, status: "error", error: errorMessage });
         });
       }
     }
@@ -151,9 +171,10 @@ export default async function reqHandler(req: Request) {
       headers: { "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error: any) {
-    console.error("Function overall error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown server error";
+    console.error("Function overall error:", errorMessage);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { "Content-Type": "application/json" },
       status: 500,
     });

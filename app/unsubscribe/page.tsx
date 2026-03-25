@@ -5,25 +5,25 @@ import { useEffect, useState, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 function UnsubscribeContent() {
   const searchParams = useSearchParams();
   const token = searchParams?.get("token");
   
-  const [status, setStatus] = useState<"loading" | "success" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "invalid">(
+    !token || token.trim().length === 0 ? "invalid" : "loading"
+  );
 
   useEffect(() => {
-    if (!token || token.trim().length === 0) {
-      setStatus("invalid");
-      return;
-    }
+    if (status !== "loading" || !token) return;
 
     async function unsubscribe() {
       try {
         const { error, count } = await supabase
           .from("newsletter_subscribers")
           .update({ active: false })
-          .eq("id", token!)
+          .eq("id", token)
           .eq("active", true);
 
         if (error || count === 0) {
@@ -38,7 +38,7 @@ function UnsubscribeContent() {
     }
 
     unsubscribe();
-  }, [token]);
+  }, [token, status]);
 
   return (
     <Card className="max-w-md w-full border-white/10 bg-black/50 backdrop-blur-xl">
@@ -64,9 +64,9 @@ function UnsubscribeContent() {
                 Você não receberá mais os alertas diários do Clima Certo.
                 Lamentamos ver você partir!
               </p>
-              <a href="/" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors font-medium">
+              <Link href="/" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors font-medium">
                 ← Voltar para a Página Inicial
-              </a>
+              </Link>
             </div>
           </div>
         )}
@@ -81,9 +81,9 @@ function UnsubscribeContent() {
               <p className="text-slate-300 text-sm mb-6">
                 O link de cancelamento parece estar quebrado ou já foi utilizado.
               </p>
-              <a href="/" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors font-medium">
+              <Link href="/" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors font-medium">
                 ← Voltar para a Página Inicial
-              </a>
+              </Link>
             </div>
           </div>
         )}

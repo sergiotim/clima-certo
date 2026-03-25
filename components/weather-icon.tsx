@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Sun,
   Moon,
@@ -21,7 +22,7 @@ export function WeatherIcon({
   size?: number;
   className?: string;
 }) {
-  const iconMap: Record<string, any> = {
+  const iconMap: Record<string, React.ElementType> = {
     "01d": Sun,
     "01n": Moon,
     "02d": CloudSun,

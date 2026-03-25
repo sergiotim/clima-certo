@@ -1,9 +1,8 @@
-"use client";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { WeatherIcon } from "@/components/weather-icon";
+import { WeatherData } from "@/lib/weather";
 
-export function TemperatureCard({ data }: { data: any }) {
+export function TemperatureCard({ data }: { data: WeatherData | null }) {
   if (!data) return <Card className="overflow-hidden relative border-indigo-500/20 bg-gradient-to-br from-indigo-900/40 to-black/60"><CardContent className="p-6">Cidade não encontrada</CardContent></Card>;
   
   const temp = Math.round(data.main.temp);

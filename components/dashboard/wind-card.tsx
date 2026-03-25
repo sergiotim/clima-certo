@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wind, Navigation } from "lucide-react";
+import { WeatherData } from "@/lib/weather";
 
-export function WindCard({ data }: { data: any }) {
+export function WindCard({ data }: { data: WeatherData | null }) {
   if (!data) return null;
   const speed = Math.round(data.wind.speed * 3.6);
   const gust = data.wind.gust ? Math.round(data.wind.gust * 3.6) : "--";

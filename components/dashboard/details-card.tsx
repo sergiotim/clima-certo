@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Droplet, Gauge, Eye, Sun, Snowflake } from "lucide-react";
+import { WeatherData } from "@/lib/weather";
 
-export function DetailsCard({ data }: { data: any }) {
+export function DetailsCard({ data }: { data: WeatherData | null }) {
   if (!data) return null;
   const details = [
     { label: "Umidade", value: `${data.main.humidity}%`, icon: Droplet },

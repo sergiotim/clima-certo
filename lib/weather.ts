@@ -1,4 +1,24 @@
-export async function getWeatherData(city: string) {
+export interface WeatherData {
+  coord: { lat: number; lon: number };
+  weather: Array<{ id: number; main: string; description: string; icon: string }>;
+  main: {
+    temp: number;
+    feels_like: number;
+    temp_min: number;
+    temp_max: number;
+    pressure: number;
+    humidity: number;
+  };
+  visibility: number;
+  wind: { speed: number; deg: number; gust?: number };
+  sys: { country: string; sunrise: number; sunset: number };
+  name: string;
+  dt: number;
+  uvi?: number;
+  dew_point?: number;
+}
+
+export async function getWeatherData(city: string): Promise<WeatherData | null> {
   const apiKey = process.env.OPENWEATHER_API_KEY;
   if (!apiKey) {
     console.error("Missing OPENWEATHER_API_KEY");
@@ -18,8 +38,9 @@ export async function getWeatherData(city: string) {
       throw new Error(`OpenWeather API error: ${res.status}`);
     }
 
-    const data = await res.json();
-    // Calcular Ponto de Orvalho via fórmula de Magnus (usando temp e umidade do endpoint gratuito)
+    const data = (await res.json()) as WeatherData;
+
+    // Calcular Ponto de Orvalho via fórmula de Magnus
     try {
       const temp = data.main.temp;
       const humidity = data.main.humidity;
@@ -44,7 +65,7 @@ export async function getWeatherData(city: string) {
     } catch (err) {
       console.warn("Could not fetch UV index", err);
     }
-    
+
     return data;
   } catch (error) {
     console.error("Failed to fetch weather data:", error);
@@ -61,6 +82,13 @@ export interface DailyForecast {
   description: string;
 }
 
+interface OpenWeatherForecastItem {
+  dt: number;
+  main: { temp: number };
+  weather: Array<{ icon: string; description: string }>;
+  dt_txt: string;
+}
+
 export async function getDailyForecast(city: string): Promise<DailyForecast[] | null> {
   const apiKey = process.env.OPENWEATHER_API_KEY;
   if (!apiKey) return null;
@@ -75,14 +103,19 @@ export async function getDailyForecast(city: string): Promise<DailyForecast[] | 
 
     if (!res.ok) return null;
 
-    const data = await res.json();
-    
-    const dailyData = new Map<string, any>();
-    
+    const data = await res.json() as { list: OpenWeatherForecastItem[] };
+
+    const dailyData = new Map<string, {
+      date: string;
+      temps: number[];
+      icons: string[];
+      descriptions: string[];
+    }>();
+
     // Group forecast data by date string (YYYY-MM-DD)
     for (const item of data.list) {
       const dateStr = item.dt_txt.split(' ')[0];
-      
+
       if (!dailyData.has(dateStr)) {
         dailyData.set(dateStr, {
           date: dateStr,
@@ -91,8 +124,8 @@ export async function getDailyForecast(city: string): Promise<DailyForecast[] | 
           descriptions: []
         });
       }
-      
-      const day = dailyData.get(dateStr);
+
+      const day = dailyData.get(dateStr)!;
       day.temps.push(item.main.temp);
       day.icons.push(item.weather[0].icon);
       day.descriptions.push(item.weather[0].description);
@@ -103,15 +136,13 @@ export async function getDailyForecast(city: string): Promise<DailyForecast[] | 
 
     let count = 0;
     for (const [dateStr, day] of dailyData.entries()) {
-      if (count >= 5) break; 
-      
-      // Criar data forçando timezone UTC para não mudar o dia na conversão local
-      const dateObj = new Date(dateStr + 'T12:00:00Z'); 
-      
+      if (count >= 5) break;
+
+      const dateObj = new Date(dateStr + 'T12:00:00Z');
+
       const tempMax = Math.round(Math.max(...day.temps));
       const tempMin = Math.round(Math.min(...day.temps));
-      
-      // Pegar o ícone do meio do dia
+
       const midPoint = Math.floor(day.icons.length / 2);
       const icon = day.icons[midPoint] || day.icons[0];
       const desc = day.descriptions[midPoint] || day.descriptions[0];

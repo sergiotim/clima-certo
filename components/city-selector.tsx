@@ -34,15 +34,11 @@ export function CitySelector() {
     }
   }, [country]);
 
+  // Render-time state synchronization to avoid cascading renders
+  const displayedCities = country === "BR" && selectedState ? cities : [];
+  
   useEffect(() => {
-    if (country === "BR") {
-      if (!selectedState) {
-        setCities([]);
-        setSelectedCity("");
-        return;
-      }
-      
-      setIsLoading(true);
+    if (country === "BR" && selectedState) {
       fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`)
         .then((res) => res.json())
         .then((data) => {
@@ -85,7 +81,10 @@ export function CitySelector() {
           <>
             <select
               value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
+              onChange={(e) => {
+                setSelectedState(e.target.value);
+                setIsLoading(true);
+              }}
               className="w-1/4 h-10 px-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-lg appearance-none text-sm outline-none"
               required
             >
@@ -109,7 +108,7 @@ export function CitySelector() {
                 <option value="" disabled className="text-slate-500 bg-slate-900">
                   {isLoading ? "Carregando..." : "Cidade"}
                 </option>
-                {cities.map((city) => (
+                {displayedCities.map((city) => (
                   <option key={city.id} value={city.nome} className="bg-slate-900 text-white">
                     {city.nome}
                   </option>

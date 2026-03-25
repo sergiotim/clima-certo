@@ -6,10 +6,26 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { email, city, country } = body;
 
-    // Basic validation
+    // Robust validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
     if (!email || !city) {
       return NextResponse.json(
         { error: "Email e cidade são obrigatórios." },
+        { status: 400 }
+      );
+    }
+
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Por favor, insira um email válido." },
+        { status: 400 }
+      );
+    }
+
+    if (city.trim().length < 2) {
+      return NextResponse.json(
+        { error: "Nome da cidade inválido." },
         { status: 400 }
       );
     }

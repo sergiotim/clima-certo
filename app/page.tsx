@@ -16,6 +16,11 @@ export default async function Home(props: { searchParams: SearchParams }) {
   const weatherData = await getWeatherData(city);
   const forecastData = await getDailyForecast(city);
 
+  const currentTime = new Date().getTime();
+  const lastUpdated = weatherData?.dt
+    ? `Dados atualizados há ${Math.max(1, Math.round((currentTime / 1000 - weatherData.dt) / 60))} min`
+    : "Dados atualizados";
+
   return (
     <div className="min-h-screen bg-[#070B14]">
       <Header />
@@ -33,9 +38,7 @@ export default async function Home(props: { searchParams: SearchParams }) {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-white tracking-tight">Visão Geral</h1>
             <div className="text-sm text-indigo-200 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
-              {weatherData?.dt
-                ? `Dados atualizados há ${Math.max(1, Math.round((Date.now() / 1000 - weatherData.dt) / 60))} min`
-                : "Dados atualizados"}
+              {lastUpdated}
             </div>
           </div>
           

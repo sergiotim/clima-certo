@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sunrise, Sunset } from "lucide-react";
+import { WeatherData } from "@/lib/weather";
 
-export function SunCard({ data }: { data: any }) {
-  const [now, setNow] = useState(Date.now());
+export function SunCard({ data }: { data: WeatherData | null }) {
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 60_000); // Atualiza a cada minuto
