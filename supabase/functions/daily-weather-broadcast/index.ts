@@ -14,6 +14,13 @@ const OPENWEATHER_API_KEY = Deno.env.get("OPENWEATHER_API_KEY") ?? "";
 // Create clients
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const resend = new Resend(RESEND_API_KEY);
+
+if (!GEMINI_API_KEY) {
+  console.error("GEMINI_API_KEY is NOT set in environment variables!");
+} else {
+  console.log(`GEMINI_API_KEY is set (Length: ${GEMINI_API_KEY.length}, starts with: ${GEMINI_API_KEY.substring(0, 4)}...)`);
+}
+
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 // O tier gratuito do Gemini (AI Studio) permite 15 requisições por minuto (15 RPM).
@@ -72,14 +79,18 @@ export default async function reqHandler(req: Request) {
               // Pausa de 4 segundos para não exceder o limite gratuito de 15 RPM (Requests Per Minute) da API do Gemini
               await new Promise(resolve => setTimeout(resolve, 4000));
 
+              // Usando gemini-1.5-flash para maior estabilidade e compatibilidade garantida
               const aiResponse = await ai.models.generateContent({
-                  model: 'gemini-2.5-flash',
-                  contents: prompt,
+                  model: 'gemini-1.5-flash',
+                  contents: [{ role: 'user', parts: [{ text: prompt }] }],
               });
               
+              console.log("AI Response received successfully");
+              
               motivationalMessage = aiResponse.text || `Bom dia! Hoje em ${cityQuery} estamos com ${currentTemp}°C e ${weatherDesc}. Que você tenha um excelente dia!`;
-            } catch (aiErr) {
-              console.warn(`Gemini AI unavailable, using fallback for ${subscriber.email}:`, aiErr);
+            } catch (aiErr: any) {
+              console.error(`Gemini AI Error for ${subscriber.email}:`, aiErr);
+              if (aiErr.stack) console.error(aiErr.stack);
               motivationalMessage = `☀️ Bom dia!\n\nHoje em ${cityQuery} estamos com ${Math.round(currentTemp)}°C e ${weatherDesc}.\n\nQue você tenha um dia produtivo e cheio de energia!`;
             }
 
