@@ -4,7 +4,6 @@
   },
   "imports": {
     "groq-sdk": "npm:groq-sdk",
-    "resend": "npm:resend",
     "@supabase/supabase-js": "npm:@supabase/supabase-js",
     "p-limit": "npm:p-limit"
   }

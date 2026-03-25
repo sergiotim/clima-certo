@@ -1,18 +1,19 @@
 # Deploy e Configuração da Automação de E-mails
 
-Este documento descreve as etapas para configurar a Supabase Edge Function `daily-weather-broadcast` no seu projeto que usa Gemini e Resend.
+Este documento descreve as etapas para configurar a Supabase Edge Function `daily-weather-broadcast` no seu projeto que usa Groq e Brevo.
 
 ## 1. Secrets (Variáveis de Ambiente)
 Antes de fazer o deploy, você precisa configurar os SECRETS da função no Supabase. Execute os seguintes comandos no terminal usando o CLI do Supabase:
 
 \`\`\`bash
-# Configuração de envio via Resend
-supabase secrets set RESEND_API_KEY="sua_chave_resend_re_XXXXX"
+# Configuração de envio via Brevo
+supabase secrets set BREVO_API_KEY="xkeysib-XXXXX"
+supabase secrets set BREVO_SENDER_EMAIL="contato.climacerto@gmail.com"
 
-# Inteligência Artificial com Gemini
-supabase secrets set GEMINI_API_KEY="sua_chave_gemini_AIzaXXX"
+# Inteligência Artificial com Groq
+supabase secrets set GROQ_API_KEY="gsk_XXXXX"
 
-# Dados de clima OpenWeatherMap (3.0 One Call)
+# Dados de clima OpenWeatherMap (2.5 ou 3.0)
 supabase secrets set OPENWEATHER_API_KEY="sua_chave_openweather"
 
 # URL Base da sua aplicação para o link de Unsubscribe funcionar corretamente
@@ -35,10 +36,10 @@ Use a extensão `pg_net` para disparar a função todos os dias de manhã. Vá n
 -- Crie a extensão caso não exista
 create extension if not exists pg_net;
 
--- Crie o agendamento (Cron) para as 07:00 da manhã, horário de Brasília (10:00 UTC)
+-- Crie o agendamento (Cron) para as 08:00 da manhã, horário de Brasília (11:00 UTC)
 select cron.schedule(
     'enviar-mensagens-clima',
-    '0 10 * * *', -- Executa às 10:00 AM UTC (07:00 AM BSB)
+    '0 11 * * *', -- Executa às 11:00 AM UTC (08:00 AM BSB)
     $$
     select net.http_post(
         url := 'https://<seu-project-ref>.supabase.co/functions/v1/daily-weather-broadcast',
