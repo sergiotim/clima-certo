@@ -3,7 +3,7 @@
     "start": "deno run --env --allow-env --allow-net --allow-read index.ts"
   },
   "imports": {
-    "@google/genai": "npm:@google/genai",
+    "groq-sdk": "npm:groq-sdk",
     "resend": "npm:resend",
     "@supabase/supabase-js": "npm:@supabase/supabase-js",
     "p-limit": "npm:p-limit"
