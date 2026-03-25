@@ -17,8 +17,6 @@ const resend = new Resend(RESEND_API_KEY);
 
 if (!GEMINI_API_KEY) {
   console.error("GEMINI_API_KEY is NOT set in environment variables!");
-} else {
-  console.log(`GEMINI_API_KEY is set (Length: ${GEMINI_API_KEY.length}, starts with: ${GEMINI_API_KEY.substring(0, 4)}...)`);
 }
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
@@ -79,9 +77,9 @@ export default async function reqHandler(req: Request) {
               // Pausa de 4 segundos para não exceder o limite gratuito de 15 RPM (Requests Per Minute) da API do Gemini
               await new Promise(resolve => setTimeout(resolve, 4000));
 
-              // Usando gemini-1.5-flash para maior estabilidade e compatibilidade garantida
+              // Voltando para gemini-2.5-flash conforme teste que teve sucesso anteriormente
               const aiResponse = await ai.models.generateContent({
-                  model: 'gemini-1.5-flash',
+                  model: 'gemini-2.5-flash',
                   contents: [{ role: 'user', parts: [{ text: prompt }] }],
               });
               
