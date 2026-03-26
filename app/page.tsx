@@ -5,6 +5,8 @@ import { SunCard } from "@/components/dashboard/sun-card";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { Header } from "@/components/layout/header";
 import { WeatherIcon } from "@/components/weather-icon";
+import { LocationDetector } from "@/components/location-detector";
+import { Suspense } from "react";
 
 import { getWeatherData, getDailyForecast } from "@/lib/weather";
 
@@ -12,9 +14,21 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 export default async function Home(props: { searchParams: SearchParams }) {
   const searchParams = await props.searchParams;
-  const city = typeof searchParams.city === "string" ? searchParams.city : "São Paulo";
-  const weatherData = await getWeatherData(city);
-  const forecastData = await getDailyForecast(city);
+  
+  const city = typeof searchParams.city === "string" ? searchParams.city : undefined;
+  const lat = typeof searchParams.lat === "string" ? parseFloat(searchParams.lat) : undefined;
+  const lon = typeof searchParams.lon === "string" ? parseFloat(searchParams.lon) : undefined;
+
+  let query: string | { lat: number; lon: number } = "São Paulo";
+  
+  if (city) {
+    query = city;
+  } else if (lat !== undefined && lon !== undefined && !isNaN(lat) && !isNaN(lon)) {
+    query = { lat, lon };
+  }
+
+  const weatherData = await getWeatherData(query);
+  const forecastData = await getDailyForecast(query);
 
   const currentTime = new Date().getTime();
   const lastUpdated = weatherData?.dt
@@ -23,6 +37,9 @@ export default async function Home(props: { searchParams: SearchParams }) {
 
   return (
     <div className="min-h-screen bg-[#030712] selection:bg-indigo-500/30">
+      <Suspense fallback={null}>
+        <LocationDetector />
+      </Suspense>
       <Header />
       
       {/* Background decorations */}

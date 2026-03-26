@@ -18,7 +18,7 @@ export interface WeatherData {
   dew_point?: number;
 }
 
-export async function getWeatherData(city: string): Promise<WeatherData | null> {
+export async function getWeatherData(query: string | { lat: number, lon: number }): Promise<WeatherData | null> {
   const apiKey = process.env.OPENWEATHER_API_KEY;
   if (!apiKey) {
     console.error("Missing OPENWEATHER_API_KEY");
@@ -26,12 +26,11 @@ export async function getWeatherData(city: string): Promise<WeatherData | null> 
   }
 
   try {
-    const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-        city
-      )}&units=metric&lang=pt_br&appid=${apiKey}`,
-      { next: { revalidate: 60 } }
-    );
+    const url = typeof query === "string" 
+      ? `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(query)}&units=metric&lang=pt_br&appid=${apiKey}`
+      : `https://api.openweathermap.org/data/2.5/weather?lat=${query.lat}&lon=${query.lon}&units=metric&lang=pt_br&appid=${apiKey}`;
+
+    const res = await fetch(url, { next: { revalidate: 60 } });
 
     if (!res.ok) {
       if (res.status === 404) return null; // City not found
@@ -89,17 +88,16 @@ interface OpenWeatherForecastItem {
   dt_txt: string;
 }
 
-export async function getDailyForecast(city: string): Promise<DailyForecast[] | null> {
+export async function getDailyForecast(query: string | { lat: number, lon: number }): Promise<DailyForecast[] | null> {
   const apiKey = process.env.OPENWEATHER_API_KEY;
   if (!apiKey) return null;
 
   try {
-    const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(
-        city
-      )}&units=metric&lang=pt_br&appid=${apiKey}`,
-      { next: { revalidate: 3600 } }
-    );
+    const url = typeof query === "string" 
+      ? `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(query)}&units=metric&lang=pt_br&appid=${apiKey}`
+      : `https://api.openweathermap.org/data/2.5/forecast?lat=${query.lat}&lon=${query.lon}&units=metric&lang=pt_br&appid=${apiKey}`;
+
+    const res = await fetch(url, { next: { revalidate: 3600 } });
 
     if (!res.ok) return null;
 
