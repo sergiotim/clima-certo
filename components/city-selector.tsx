@@ -43,7 +43,7 @@ export function CitySelector() {
             setSelectedCity("");
           }}
           aria-label="Selecionar País"
-          className="w-full sm:w-1/3 h-11 px-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-xl appearance-none text-sm outline-none transition-all hover:bg-white/10"
+          className="w-full sm:w-[100px] h-11 px-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-xl appearance-none text-sm outline-none transition-all hover:bg-white/10"
           required
         >
           <option value="BR" className="bg-slate-900 text-white">Brasil</option>
@@ -58,7 +58,7 @@ export function CitySelector() {
                 setSelectedState(e.target.value);
               }}
               aria-label="Selecionar Estado"
-              className="w-full sm:w-1/4 h-11 px-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-xl appearance-none text-sm outline-none transition-all hover:bg-white/10"
+              className="w-full sm:w-[70px] h-11 px-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-xl appearance-none text-sm outline-none transition-all hover:bg-white/10"
               required
             >
               <option value="" disabled className="text-slate-500 bg-slate-900">UF</option>
