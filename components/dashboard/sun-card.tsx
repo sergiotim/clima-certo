@@ -44,38 +44,38 @@ export function SunCard({ data }: { data: WeatherData | null }) {
   }
 
   return (
-    <Card className="h-full relative overflow-hidden">
-      <div className="absolute -bottom-10 -right-10 opacity-5">
-        <Sunrise size={150} />
+    <Card className="h-full relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-xl rounded-2xl group hover:border-indigo-500/30 transition-all duration-500">
+      <div className="absolute -bottom-10 -right-10 opacity-5 text-indigo-400 group-hover:scale-110 transition-transform duration-700">
+        <Sunrise size={180} />
       </div>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-indigo-100 flex items-center gap-2">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-indigo-100 flex items-center gap-2 text-base md:text-lg">
           Sol e Lua
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-between items-end mb-2">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400 flex items-center gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
               <Sunrise size={14} className="text-orange-400" /> Nascer
             </span>
-            <span className="font-medium text-lg text-white">{sunrise}</span>
+            <span className="font-bold text-xl text-white">{sunrise}</span>
           </div>
           <div className="flex flex-col gap-1 text-right">
-            <span className="text-xs text-slate-400 flex items-center gap-1 justify-end">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1 justify-end">
               Pôr <Sunset size={14} className="text-indigo-400" />
             </span>
-            <span className="font-medium text-lg text-white">{sunset}</span>
+            <span className="font-bold text-xl text-white">{sunset}</span>
           </div>
         </div>
         
-        <div className="mt-4 relative w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+        <div className="mt-4 relative w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
           <div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 via-amber-400 to-indigo-600 rounded-full transition-all duration-1000"
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-400 via-amber-300 to-indigo-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
             style={{ width: `${Math.round(progress * 100)}%` }}
           />
         </div>
-        <p className="text-xs text-slate-400 mt-2 text-center">{remainingText}</p>
+        <p className="text-xs font-medium text-slate-400 mt-4 text-center bg-white/5 py-2 rounded-lg border border-white/5">{remainingText}</p>
       </CardContent>
     </Card>
   );

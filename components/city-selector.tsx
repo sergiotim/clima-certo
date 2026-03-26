@@ -1,56 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface State {
-  id: number;
-  sigla: string;
-  nome: string;
-}
-
-interface City {
-  id: number;
-  nome: string;
-}
+import { useIBGEData } from "@/hooks/use-ibge-data";
 
 export function CitySelector() {
   const router = useRouter();
   const [country, setCountry] = useState("BR");
-  const [states, setStates] = useState<State[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [selectedState, setSelectedState] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (country === "BR") {
-      fetch("https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome")
-        .then((res) => res.json())
-        .then((data) => setStates(data))
-        .catch((err) => console.error("Erro ao buscar estados:", err));
-    }
-  }, [country]);
-
-  // Render-time state synchronization to avoid cascading renders
-  const displayedCities = country === "BR" && selectedState ? cities : [];
   
-  useEffect(() => {
-    if (country === "BR" && selectedState) {
-      fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`)
-        .then((res) => res.json())
-        .then((data) => {
-          setCities(data);
-          setIsLoading(false);
-        })
-        .catch((err) => {
-          console.error("Erro ao buscar cidades:", err);
-          setIsLoading(false);
-        });
-    }
-  }, [selectedState, country]);
+  const {
+    states,
+    cities,
+    selectedState,
+    setSelectedState,
+    selectedCity,
+    setSelectedCity,
+    isLoadingCities: isLoading
+  } = useIBGEData(country);
+
+  // Handled by hook
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +29,8 @@ export function CitySelector() {
     const query = country === "BR" ? `${selectedCity}, ${selectedState}, BR` : selectedCity;
     router.push(`/?city=${encodeURIComponent(query)}`);
   };
+
+  const displayedCities = country === "BR" && selectedState ? cities : [];
 
   return (
     <form onSubmit={handleSearch} className="flex flex-col sm:flex-row w-full max-w-2xl items-center gap-2">
@@ -70,7 +42,8 @@ export function CitySelector() {
             setSelectedState("");
             setSelectedCity("");
           }}
-          className="w-1/3 h-10 px-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-lg appearance-none text-sm outline-none"
+          aria-label="Selecionar País"
+          className="w-1/3 h-11 px-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-xl appearance-none text-sm outline-none transition-all hover:bg-white/10"
           required
         >
           <option value="BR" className="bg-slate-900 text-white">Brasil</option>
@@ -83,12 +56,12 @@ export function CitySelector() {
               value={selectedState}
               onChange={(e) => {
                 setSelectedState(e.target.value);
-                setIsLoading(true);
               }}
-              className="w-1/4 h-10 px-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-lg appearance-none text-sm outline-none"
+              aria-label="Selecionar Estado"
+              className="w-1/4 h-11 px-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-xl appearance-none text-sm outline-none transition-all hover:bg-white/10"
               required
             >
-              <option value="" disabled className="text-slate-500 bg-slate-900">Estado</option>
+              <option value="" disabled className="text-slate-500 bg-slate-900">UF</option>
               {states.map((uf) => (
                 <option key={uf.id} value={uf.sigla} className="bg-slate-900 text-white">
                   {uf.sigla}
@@ -97,12 +70,13 @@ export function CitySelector() {
             </select>
             
             <div className="relative w-full">
-              <Search className="absolute left-2.5 top-3 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
                 disabled={!selectedState || isLoading}
-                className="w-full h-10 pl-9 pr-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-lg appearance-none text-sm outline-none disabled:opacity-50"
+                aria-label="Selecionar Cidade"
+                className="w-full h-11 pl-10 pr-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-xl appearance-none text-sm outline-none disabled:opacity-50 transition-all hover:bg-white/10"
                 required
               >
                 <option value="" disabled className="text-slate-500 bg-slate-900">
@@ -118,19 +92,20 @@ export function CitySelector() {
           </>
         ) : (
           <div className="relative w-full">
-            <Search className="absolute left-2.5 top-3 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
             <input
               type="text"
               placeholder="Digite a cidade e país (ex: Paris, FR)"
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-lg text-sm outline-none"
+              aria-label="Digite a cidade e país"
+              className="w-full h-11 pl-10 pr-3 py-2 bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-xl text-sm outline-none transition-all hover:bg-white/10"
               required
             />
           </div>
         )}
       </div>
-      <Button type="submit" className="w-full sm:w-auto rounded-lg px-5 h-10 whitespace-nowrap" disabled={!selectedCity}>
+      <Button type="submit" className="w-full sm:w-auto rounded-xl px-6 h-11 whitespace-nowrap active:scale-95 transition-all shadow-lg shadow-indigo-500/20" disabled={!selectedCity}>
         Buscar
       </Button>
     </form>

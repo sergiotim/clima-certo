@@ -6,45 +6,27 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, CheckCircle2 } from "lucide-react";
 
+import { useIBGEData } from "@/hooks/use-ibge-data";
+
 export function NewsletterSignup() {
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("BR");
-  const [states, setStates] = useState<{ id: number; sigla: string; nome: string }[]>([]);
-  const [cities, setCities] = useState<{ id: number; nome: string }[]>([]);
-  const [selectedState, setSelectedState] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
+  
+  const {
+    states,
+    cities,
+    selectedState,
+    setSelectedState,
+    selectedCity,
+    setSelectedCity,
+    isLoadingCities: isLoadingCity
+  } = useIBGEData(country);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [isLoadingCity, setIsLoadingCity] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (country === "BR") {
-      fetch("https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome")
-        .then((res) => res.json())
-        .then((data) => setStates(data))
-        .catch((err) => console.error(err));
-    }
-  }, [country]);
-
-  // Render-time state synchronization
-  const displayedCities = country === "BR" && selectedState ? cities : [];
-
-  useEffect(() => {
-    if (country === "BR" && selectedState) {
-      fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`)
-        .then((res) => res.json())
-        .then((data) => {
-          setCities(data);
-          setIsLoadingCity(false);
-        })
-        .catch((err) => {
-          console.error(err);
-          setIsLoadingCity(false);
-        });
-    }
-  }, [selectedState, country]);
+  // Handled by hook
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +98,8 @@ export function NewsletterSignup() {
                 setSelectedState("");
                 setSelectedCity("");
               }}
-              className="w-1/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none"
+              aria-label="Selecionar País"
+              className="w-1/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none transition-all hover:bg-black/60"
               required
             >
               <option value="BR" className="bg-slate-900 text-white">Brasil</option>
@@ -128,9 +111,9 @@ export function NewsletterSignup() {
                 value={selectedState}
                 onChange={(e) => {
                   setSelectedState(e.target.value);
-                  setIsLoadingCity(true);
                 }}
-                className="w-2/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none"
+                aria-label="Selecionar Estado"
+                className="w-2/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none transition-all hover:bg-black/60"
                 required
               >
                 <option value="" disabled className="text-slate-500 bg-slate-900">UF / Estado</option>
@@ -148,13 +131,14 @@ export function NewsletterSignup() {
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
               disabled={!selectedState || isLoadingCity}
-              className="w-full h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none disabled:opacity-50"
+              aria-label="Selecionar Cidade"
+              className="w-full h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none disabled:opacity-50 transition-all hover:bg-black/60"
               required
             >
               <option value="" disabled className="text-slate-500 bg-slate-900">
                 {isLoadingCity ? "Carregando..." : "Sua Cidade"}
               </option>
-              {displayedCities.map((city) => (
+              {cities.map((city) => (
                 <option key={city.id} value={city.nome} className="bg-slate-900 text-white">
                   {city.nome}
                 </option>
@@ -166,8 +150,9 @@ export function NewsletterSignup() {
               placeholder="Digite a cidade e país (ex: Roma, IT)" 
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
+              aria-label="Digite a cidade e país"
               required
-              className="bg-black/40 border-white/10"
+              className="bg-black/40 border-white/10 focus:ring-indigo-500/50"
             />
           )}
 
@@ -176,8 +161,9 @@ export function NewsletterSignup() {
             placeholder="seu@email.com.br" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            aria-label="Email para inscrição"
             required
-            className="bg-black/40 border-white/10"
+            className="bg-black/40 border-white/10 focus:ring-indigo-500/50"
           />
 
           {error && (

@@ -13,21 +13,21 @@ export function DetailsCard({ data }: { data: WeatherData | null }) {
   ];
 
   return (
-    <Card className="h-full">
+    <Card className="h-full border-white/10 bg-white/5 backdrop-blur-xl rounded-2xl group hover:border-indigo-500/30 transition-all duration-500">
       <CardHeader className="pb-2">
         <CardTitle className="text-indigo-100 flex items-center gap-2">
           Detalhes Técnicos
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4 mt-2">
+        <div className="grid grid-cols-2 gap-3 md:gap-4 mt-2">
           {details.map((detail, index) => (
-            <div key={index} className="flex flex-col bg-white/5 p-3 rounded-lg border border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <detail.icon size={14} className="text-indigo-400" />
-                <span className="text-xs text-slate-400">{detail.label}</span>
+            <div key={index} className="flex flex-col bg-white/5 p-3 rounded-xl border border-white/5 group/item hover:bg-white/10 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <detail.icon size={14} className="text-indigo-400 group-hover/item:scale-110 transition-transform" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{detail.label}</span>
               </div>
-              <span className="font-medium text-slate-200">{detail.value}</span>
+              <span className="font-bold text-slate-100">{detail.value}</span>
             </div>
           ))}
         </div>
