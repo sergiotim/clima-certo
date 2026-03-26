@@ -54,16 +54,16 @@ export function SunCard({ data }: { data: WeatherData | null }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex flex-col gap-1">
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="flex flex-col gap-1.5 border-r border-white/5 pr-4">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
               <Sunrise size={14} className="text-orange-400" /> Nascer
             </span>
             <span className="font-bold text-xl text-white">{sunrise}</span>
           </div>
-          <div className="flex flex-col gap-1 text-right">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1 justify-end">
-              Pôr <Sunset size={14} className="text-indigo-400" />
+          <div className="flex flex-col gap-1.5 pl-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+              <Sunset size={14} className="text-indigo-400" /> Pôr
             </span>
             <span className="font-bold text-xl text-white">{sunset}</span>
           </div>

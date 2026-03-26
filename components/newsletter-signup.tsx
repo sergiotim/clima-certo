@@ -90,7 +90,7 @@ export function NewsletterSignup() {
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={country}
               onChange={(e) => {
@@ -99,7 +99,7 @@ export function NewsletterSignup() {
                 setSelectedCity("");
               }}
               aria-label="Selecionar País"
-              className="w-1/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none transition-all hover:bg-black/60"
+              className="w-full sm:w-1/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none transition-all hover:bg-black/60"
               required
             >
               <option value="BR" className="bg-slate-900 text-white">Brasil</option>
@@ -113,7 +113,7 @@ export function NewsletterSignup() {
                   setSelectedState(e.target.value);
                 }}
                 aria-label="Selecionar Estado"
-                className="w-2/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none transition-all hover:bg-black/60"
+                className="w-full sm:w-2/3 h-10 px-3 py-2 bg-black/40 border border-white/10 text-white focus:ring-2 focus:ring-indigo-500/50 rounded-md appearance-none text-sm outline-none transition-all hover:bg-black/60"
                 required
               >
                 <option value="" disabled className="text-slate-500 bg-slate-900">UF / Estado</option>
