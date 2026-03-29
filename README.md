@@ -20,6 +20,35 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Automated API Tests
+
+This project includes a first test layer focused on API request validation.
+
+### Available commands
+
+```bash
+npm run test:api:internal
+npm run test:api:external
+npm run test:api
+```
+
+- `test:api:internal`: validates internal API routes (`/api/subscribe` and `/api/unsubscribe`).
+- `test:api:external`: runs smoke tests against external services (OpenWeather and IBGE).
+- `test:api`: runs both suites in sequence.
+
+### Environment notes
+
+- The test setup loads environment variables through Next.js `loadEnvConfig`.
+- For OpenWeather smoke tests, configure `OPENWEATHER_API_KEY`.
+- In CI, the workflow reads `OPENWEATHER_API_KEY` from repository secrets.
+
+### CI
+
+GitHub Actions workflow: `.github/workflows/api-tests.yml`
+
+- Job 1: Internal API tests (always runs)
+- Job 2: External API smoke tests (real requests, with secret key)
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
