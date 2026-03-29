@@ -81,7 +81,7 @@ export default async function Home(props: { searchParams: SearchParams }) {
           <NewsletterSignup />
           
           <div className="bg-white/5 rounded-2xl border border-white/10 p-6 backdrop-blur-xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <h3 className="font-semibold text-white mb-1 text-sm relative z-10">Previsão 5 Dias</h3>
             <p className="text-xs text-slate-400 mb-5 relative z-10">Acompanhe a tendência semanal.</p>
             <div className="space-y-4 relative z-10">

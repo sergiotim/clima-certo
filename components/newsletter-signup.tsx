@@ -77,7 +77,7 @@ export function NewsletterSignup() {
 
   return (
     <Card className="border-white/10 relative overflow-hidden group">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-br from-indigo-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-indigo-100">
           <Mail size={18} className="text-indigo-400" />

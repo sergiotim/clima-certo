@@ -18,8 +18,14 @@ export function SunCard({ data }: { data: WeatherData | null }) {
   const sunriseMs = data.sys.sunrise * 1000;
   const sunsetMs = data.sys.sunset * 1000;
 
-  const sunrise = new Date(sunriseMs).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const sunset = new Date(sunsetMs).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const sunrise = new Date(sunriseMs).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const sunset = new Date(sunsetMs).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   // Calcular progresso do dia (entre nascer e pôr do sol)
   const totalDaylight = sunsetMs - sunriseMs;
@@ -68,14 +74,16 @@ export function SunCard({ data }: { data: WeatherData | null }) {
             <span className="font-bold text-xl text-white">{sunset}</span>
           </div>
         </div>
-        
+
         <div className="mt-4 relative w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
           <div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-400 via-amber-300 to-indigo-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+            className="absolute top-0 left-0 h-full bg-linear-to-r from-orange-400 via-amber-300 to-indigo-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
             style={{ width: `${Math.round(progress * 100)}%` }}
           />
         </div>
-        <p className="text-xs font-medium text-slate-400 mt-4 text-center bg-white/5 py-2 rounded-lg border border-white/5">{remainingText}</p>
+        <p className="text-xs font-medium text-slate-400 mt-4 text-center bg-white/5 py-2 rounded-lg border border-white/5">
+          {remainingText}
+        </p>
       </CardContent>
     </Card>
   );

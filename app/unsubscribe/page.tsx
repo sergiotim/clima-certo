@@ -43,7 +43,7 @@ function UnsubscribeContent() {
 
   return (
     <Card className="max-w-md w-full border-white/10 bg-black/50 backdrop-blur-xl">
-      <CardContent className="p-8 flex flex-col items-center justify-center text-center min-h-[300px]">
+      <CardContent className="p-8 flex flex-col items-center justify-center text-center min-h-75">
         {status === "loading" && (
           <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
             <Loader2 size={64} className="text-indigo-400 animate-spin" />
