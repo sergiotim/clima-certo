@@ -112,7 +112,6 @@ export default async function reqHandler() {
 
         const currentTemp = weatherData.main?.temp;
         const weatherDesc = weatherData.weather?.[0]?.description;
-        const weatherContext = `Cidade: ${city}. Temperatura atual: ${currentTemp}°C. Condições: ${weatherDesc}.`;
         
         // B. Generate AI message once for the city
         let motivationalMessage: string;
@@ -122,12 +121,15 @@ export default async function reqHandler() {
 
           const chatCompletion = await groq.chat.completions.create({
             messages: [
-              { role: "user", content: `Atue como um mentor motivacional. Com base nestes dados climáticos: [ ${weatherContext} ], escreva uma saudação matinal de até 3 parágrafos que inspire o usuário a ter um dia produtivo, relacionando o clima com mindset positivo e foco. Dirija-se de forma amigável!` }
+              {
+                role: "user",
+                content: `Escreva em portugues do Brasil para uma newsletter matinal de clima.\n\nUse os dados completos da OpenWeather abaixo para criar uma mensagem realmente util para o dia a dia:\n${JSON.stringify(weatherData)}\n\nRegras obrigatorias:\n- tom humano, amigavel e objetivo\n- ate 2 paragrafos\n- inclua dicas praticas para hoje (roupa, hidratacao, deslocamento, guarda-chuva ou protetor solar quando fizer sentido)\n- conecte o clima com uma motivacao leve, sem frases genericas\n- nao use HTML\n- nao invente dados que nao estao no JSON`,
+              },
             ],
             model: "llama-3.3-70b-versatile",
           });
           
-          motivationalMessage = chatCompletion.choices[0]?.message?.content || "";
+          motivationalMessage = (chatCompletion.choices[0]?.message?.content || "").trim();
           
           if (!motivationalMessage) throw new Error("Empty message from Groq");
           
@@ -135,14 +137,19 @@ export default async function reqHandler() {
         } catch (aiErr: unknown) {
           const errorMessage = aiErr instanceof Error ? aiErr.message : "Unknown AI error";
           console.error(`Groq AI Error for city ${city}:`, errorMessage);
-          motivationalMessage = `☀️ Bom dia!\n\nHoje em ${city} estamos com ${Math.round(currentTemp)}°C e ${weatherDesc}.\n\nQue você tenha um dia produtivo e cheio de energia!`;
+          motivationalMessage = `☀️ Bom dia! Hoje em ${city} estamos com ${Math.round(currentTemp)}°C e ${weatherDesc}.\n\nRespire fundo, organize suas prioridades e avance com constancia. Bom dia produtivo para voce!`;
         }
 
         // C. Send individual emails to all subscribers in this city
         for (const subscriber of citySubscribers) {
           try {
             const unsubscribeLink = `${appUrl}/unsubscribe?token=${subscriber.id}`;
-            const emailHtml = generateWeatherEmailHtml(motivationalMessage, unsubscribeLink);
+            const emailHtml = generateWeatherEmailHtml({
+              message: motivationalMessage,
+              unsubscribeLink,
+              city,
+              weatherData,
+            });
 
             await sendBrevoEmail(
               { email: subscriber.email }, 
