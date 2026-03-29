@@ -8,6 +8,8 @@ const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY") ?? "";
 const BREVO_SENDER_EMAIL = Deno.env.get("BREVO_SENDER_EMAIL") ?? "suporte.climacerto@gmail.com";
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY") ?? "";
 const OPENWEATHER_API_KEY = Deno.env.get("OPENWEATHER_API_KEY") ?? "";
+const UNSUBSCRIBE_TOKEN_SECRET = Deno.env.get("UNSUBSCRIBE_TOKEN_SECRET") ?? "";
+const FUNCTION_AUTH_TOKEN = Deno.env.get("FUNCTION_AUTH_TOKEN") ?? "";
 
 // Create clients
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -19,6 +21,41 @@ if (!GROQ_API_KEY) {
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 
 const DELAY_MS = 2000; // 2 seconds between Groq calls
+
+function toBase64Url(bytes: Uint8Array): string {
+  const binary = Array.from(bytes, (b) => String.fromCharCode(b)).join("");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+async function signPayload(payload: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+  return toBase64Url(new Uint8Array(signature));
+}
+
+async function createUnsubscribeToken(subscriberId: string): Promise<string> {
+  if (!UNSUBSCRIBE_TOKEN_SECRET) {
+    // Backward compatible fallback until secret is configured.
+    return subscriberId;
+  }
+
+  const payload = {
+    sub: subscriberId,
+    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
+  };
+
+  const encodedPayload = toBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const signature = await signPayload(encodedPayload, UNSUBSCRIBE_TOKEN_SECRET);
+  return `${encodedPayload}.${signature}`;
+}
 
 /**
  * Sends a transactional email via Brevo API v3
@@ -62,8 +99,19 @@ interface Result {
   error?: string;
 }
 
-export default async function reqHandler() {
+export default async function reqHandler(request: Request) {
   try {
+    if (FUNCTION_AUTH_TOKEN) {
+      const authorization = request.headers.get("authorization") ?? "";
+      const expected = `Bearer ${FUNCTION_AUTH_TOKEN}`;
+      if (authorization !== expected) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          headers: { "Content-Type": "application/json" },
+          status: 401,
+        });
+      }
+    }
+
     // 1. Fetch active subscribers
     const { data: subscribers, error: subsError } = await supabase
       .from("newsletter_subscribers")
@@ -143,7 +191,8 @@ export default async function reqHandler() {
         // C. Send individual emails to all subscribers in this city
         for (const subscriber of citySubscribers) {
           try {
-            const unsubscribeLink = `${appUrl}/unsubscribe?token=${subscriber.id}`;
+            const unsubscribeToken = await createUnsubscribeToken(subscriber.id);
+            const unsubscribeLink = `${appUrl}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
             const emailHtml = generateWeatherEmailHtml({
               message: motivationalMessage,
               unsubscribeLink,

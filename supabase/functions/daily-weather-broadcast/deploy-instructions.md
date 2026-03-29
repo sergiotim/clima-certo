@@ -18,6 +18,12 @@ supabase secrets set OPENWEATHER_API_KEY="sua_chave_openweather"
 
 # URL Base da sua aplicação para o link de Unsubscribe funcionar corretamente
 supabase secrets set APP_URL="https://seu-app.vercel.app"
+
+# Segredo para assinar links de cancelamento e evitar token forjado
+supabase secrets set UNSUBSCRIBE_TOKEN_SECRET="gere-um-segredo-longo-e-aleatorio"
+
+# Token opcional para proteger invocações HTTP da Edge Function
+supabase secrets set FUNCTION_AUTH_TOKEN="gere-um-token-forte-para-cron"
 \`\`\`
 
 ## 2. Deploy da Edge Function
@@ -27,7 +33,7 @@ Após definir as variáveis de ambiente, envie o código para nuvem:
 supabase functions deploy daily-weather-broadcast --no-verify-jwt
 \`\`\`
 
-> A flag `--no-verify-jwt` é útil se você for chamar esta função externamente ou através do cron \`pg_net\`, mas certifique-se de adicionar uma validação de header caso queira restringir perfeitamente o acesso.
+> Se usar `--no-verify-jwt`, mantenha a validação de `Authorization: Bearer <FUNCTION_AUTH_TOKEN>` habilitada na função (já implementada no código).
 
 ## 3. Agendamento Automático (CRON)
 Use a extensão `pg_net` para disparar a função todos os dias de manhã. Vá no **SQL Editor** do painel do Supabase e rode:
@@ -43,13 +49,13 @@ select cron.schedule(
     $$
     select net.http_post(
         url := 'https://<seu-project-ref>.supabase.co/functions/v1/daily-weather-broadcast',
-        headers := '{"Authorization": "Bearer SUA_CHAVE_ANON"}'::jsonb
+        headers := '{"Authorization": "Bearer SEU_FUNCTION_AUTH_TOKEN"}'::jsonb
     );
     $$
 );
 \`\`\`
 
-Substitua \`<seu-project-ref>\` e \`SUA_CHAVE_ANON\` pelas credenciais do seu projeto. Caso deseje parar o cron, basta usar:
+Substitua \`<seu-project-ref>\` e \`SEU_FUNCTION_AUTH_TOKEN\` pelas credenciais do seu projeto. Caso deseje parar o cron, basta usar:
 \`\`\`sql
 select cron.unschedule('enviar-mensagens-clima');
 \`\`\`
