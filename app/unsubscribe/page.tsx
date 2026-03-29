@@ -4,7 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
 function UnsubscribeContent() {
@@ -20,13 +19,15 @@ function UnsubscribeContent() {
 
     async function unsubscribe() {
       try {
-        const { error, count } = await supabase
-          .from("newsletter_subscribers")
-          .update({ active: false })
-          .eq("id", token)
-          .eq("active", true);
+        const response = await fetch("/api/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
 
-        if (error || count === 0) {
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
           setStatus("invalid");
           return;
         }
