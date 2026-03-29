@@ -47,6 +47,11 @@ function formatPercent(value: unknown): string {
   return `${Math.round(num)}%`;
 }
 
+function capitalizeFirst(value: string): string {
+  if (!value) return value;
+  return value[0].toUpperCase() + value.slice(1);
+}
+
 function windLabel(speedMs: unknown): string {
   const speed = toNumber(speedMs);
   if (speed === null) return "sem dados";
@@ -119,7 +124,8 @@ export function generateWeatherEmailHtml({
   const feelsLike = formatTemp(main.feels_like);
   const tempMin = formatTemp(main.temp_min);
   const tempMax = formatTemp(main.temp_max);
-  const weatherDescription = escapeHtml(primaryWeather.description || "condicao indisponivel");
+  const weatherDescriptionRaw = String(primaryWeather.description || "condicao indisponivel");
+  const weatherDescription = escapeHtml(capitalizeFirst(weatherDescriptionRaw));
   const humidity = formatPercent(main.humidity);
   const windSpeed = toNumber(wind.speed);
   const windText = windSpeed === null
@@ -128,6 +134,8 @@ export function generateWeatherEmailHtml({
 
   const sunrise = formatTimeFromUnix(sys.sunrise, weatherData.timezone);
   const sunset = formatTimeFromUnix(sys.sunset, weatherData.timezone);
+  const windLabelText = windLabel(wind.speed);
+  const windLabelDisplay = escapeHtml(capitalizeFirst(windLabelText));
 
   const practicalTip = dayTip({
     temp: main.temp,
@@ -318,89 +326,95 @@ export function generateWeatherEmailHtml({
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="hero">
-      <h1>Seu clima de hoje</h1>
-      <p>${cityLabel}</p>
-    </div>
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color:#0f172a;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; background:#f4f7fb;">
+    <tr>
+      <td align="center" style="padding:24px 8px;">
+        <div class="container" style="max-width:640px; margin:0 auto; background:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 14px 34px rgba(15, 23, 42, 0.08);">
+          <div class="hero" style="background:#2563eb; background-image:radial-gradient(circle at 10% 20%, #60a5fa 0%, #2563eb 45%, #0ea5a4 100%); padding:28px 24px; color:#ffffff;">
+            <h1 style="margin:0; font-size:32px; font-weight:800; letter-spacing:-0.4px; color:#ffffff;">Seu clima de hoje</h1>
+            <p style="margin:8px 0 0; font-size:15px; opacity:0.95; color:#ffffff;">${cityLabel}</p>
+          </div>
 
-    <div class="content">
-      <h2 class="section-title">Temperatura Agora</h2>
-      <div class="card">
-        <p class="card-label">Temperatura</p>
-        <p class="card-value">${nowTemp}</p>
-        <p class="card-sub">${weatherDescription[0].toUpperCase() + weatherDescription.slice(1)}</p>
-      </div>
+          <div class="content" style="padding:20px;">
+            <h2 class="section-title" style="margin:0 0 12px; font-size:18px; font-weight:700; color:#0f172a;">Temperatura Agora</h2>
+            <div class="card" style="margin-bottom:10px; padding:14px; background:#f8fbff; border:2px solid #dbeafe; border-radius:14px; text-align:center;">
+              <p class="card-label" style="margin:0 0 8px; color:#475569; font-size:13px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700;">Temperatura</p>
+              <p class="card-value" style="margin:0; color:#0f172a; font-size:34px; font-weight:800; letter-spacing:-1px; line-height:1.1;">${nowTemp}</p>
+              <p class="card-sub" style="margin:8px 0 0; color:#334155; font-size:13px; line-height:1.45;">${weatherDescription}</p>
+            </div>
 
-      <div class="card-grid" role="presentation">
-        <div class="card-grid-item">
-          <p class="card-label">Mínima</p>
-          <p class="card-value">${tempMin}</p>
-        </div>
-        <div class="card-grid-item">
-          <p class="card-label">Máxima</p>
-          <p class="card-value">${tempMax}</p>
-        </div>
-      </div>
+            <div class="card-grid" role="presentation" style="display:table; width:100%; border-spacing:10px; margin:0 0 12px -10px;">
+              <div class="card-grid-item" style="display:table-cell; width:50%; padding:12px 10px; background:#eff6ff; border:2px solid #bfdbfe; border-radius:12px; vertical-align:top;">
+                <p class="card-label" style="margin:0 0 8px; color:#0c4a6e; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700;">Mínima</p>
+                <p class="card-value" style="margin:0; color:#0f172a; font-size:28px; font-weight:800; line-height:1.1;">${tempMin}</p>
+              </div>
+              <div class="card-grid-item" style="display:table-cell; width:50%; padding:12px 10px; background:#ecfeff; border:2px solid #bfdbfe; border-radius:12px; vertical-align:top;">
+                <p class="card-label" style="margin:0 0 8px; color:#0c4a6e; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700;">Máxima</p>
+                <p class="card-value" style="margin:0; color:#0f172a; font-size:28px; font-weight:800; line-height:1.1;">${tempMax}</p>
+              </div>
+            </div>
 
-      <h2 class="section-title">Conforto Térmico</h2>
-      <div class="card-grid" role="presentation">
-        <div class="card-grid-item">
-          <p class="card-label">Sensação Térmica</p>
-          <p class="card-value">${feelsLike}</p>
-          <p class="card-sub">${escapeHtml(comfortLabel(main.humidity))}</p>
-        </div>
-        <div class="card-grid-item">
-          <p class="card-label">Umidade do Ar</p>
-          <p class="card-value">${humidity}</p>
-          <p class="card-sub">Teor de vapor na atmosfera</p>
-        </div>
-      </div>
+            <h2 class="section-title" style="margin:0 0 12px; font-size:18px; font-weight:700; color:#0f172a;">Conforto Térmico</h2>
+            <div class="card-grid" role="presentation" style="display:table; width:100%; border-spacing:10px; margin:0 0 12px -10px;">
+              <div class="card-grid-item" style="display:table-cell; width:50%; padding:12px 10px; background:#eff6ff; border:2px solid #bfdbfe; border-radius:12px; vertical-align:top;">
+                <p class="card-label" style="margin:0 0 8px; color:#0c4a6e; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700;">Sensação Térmica</p>
+                <p class="card-value" style="margin:0; color:#0f172a; font-size:28px; font-weight:800; line-height:1.1;">${feelsLike}</p>
+                <p class="card-sub" style="margin:6px 0 0; color:#334155; font-size:12px; line-height:1.45;">${escapeHtml(comfortLabel(main.humidity))}</p>
+              </div>
+              <div class="card-grid-item" style="display:table-cell; width:50%; padding:12px 10px; background:#ecfeff; border:2px solid #bfdbfe; border-radius:12px; vertical-align:top;">
+                <p class="card-label" style="margin:0 0 8px; color:#0c4a6e; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700;">Umidade do Ar</p>
+                <p class="card-value" style="margin:0; color:#0f172a; font-size:28px; font-weight:800; line-height:1.1;">${humidity}</p>
+                <p class="card-sub" style="margin:6px 0 0; color:#334155; font-size:12px; line-height:1.45;">Teor de vapor na atmosfera</p>
+              </div>
+            </div>
 
-      <h2 class="section-title">Vento e Luz</h2>
-      <div class="card-grid" role="presentation">
-        <div class="card-grid-item">
-          <p class="card-label">Condição do Vento</p>
-          <p class="card-value">${escapeHtml(windLabel(wind.speed))[0].toUpperCase() + escapeHtml(windLabel(wind.speed)).slice(1)}</p>
-          <p class="card-sub">Velocidade: ${windText}</p>
-        </div>
-        <div class="card-grid-item">
-          <p class="card-label">Velocidade</p>
-          <p class="card-value">${windText}</p>
-          <p class="card-sub">Escala local do vento</p>
-        </div>
-      </div>
+            <h2 class="section-title" style="margin:0 0 12px; font-size:18px; font-weight:700; color:#0f172a;">Vento e Luz</h2>
+            <div class="card-grid" role="presentation" style="display:table; width:100%; border-spacing:10px; margin:0 0 12px -10px;">
+              <div class="card-grid-item" style="display:table-cell; width:50%; padding:12px 10px; background:#eff6ff; border:2px solid #bfdbfe; border-radius:12px; vertical-align:top;">
+                <p class="card-label" style="margin:0 0 8px; color:#0c4a6e; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700;">Condição do Vento</p>
+                <p class="card-value" style="margin:0; color:#0f172a; font-size:28px; font-weight:800; line-height:1.1;">${windLabelDisplay}</p>
+                <p class="card-sub" style="margin:6px 0 0; color:#334155; font-size:12px; line-height:1.45;">Velocidade: ${windText}</p>
+              </div>
+              <div class="card-grid-item" style="display:table-cell; width:50%; padding:12px 10px; background:#ecfeff; border:2px solid #bfdbfe; border-radius:12px; vertical-align:top;">
+                <p class="card-label" style="margin:0 0 8px; color:#0c4a6e; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700;">Velocidade</p>
+                <p class="card-value" style="margin:0; color:#0f172a; font-size:28px; font-weight:800; line-height:1.1;">${windText}</p>
+                <p class="card-sub" style="margin:6px 0 0; color:#334155; font-size:12px; line-height:1.45;">Escala local do vento</p>
+              </div>
+            </div>
 
-      <div class="card-grid" role="presentation">
-        <div class="card-grid-item">
-          <p class="card-label">Nascer do Sol</p>
-          <p class="card-value" style="font-size: 28px;">${sunrise}</p>
+            <div class="card-grid" role="presentation" style="display:table; width:100%; border-spacing:10px; margin:0 0 12px -10px;">
+              <div class="card-grid-item" style="display:table-cell; width:50%; padding:12px 10px; background:#eff6ff; border:2px solid #bfdbfe; border-radius:12px; vertical-align:top;">
+                <p class="card-label" style="margin:0 0 8px; color:#0c4a6e; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700;">Nascer do Sol</p>
+                <p class="card-value" style="margin:0; color:#0f172a; font-size:28px; font-weight:800; line-height:1.1;">${sunrise}</p>
+              </div>
+              <div class="card-grid-item" style="display:table-cell; width:50%; padding:12px 10px; background:#ecfeff; border:2px solid #bfdbfe; border-radius:12px; vertical-align:top;">
+                <p class="card-label" style="margin:0 0 8px; color:#0c4a6e; font-size:12px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700;">Pôr do Sol</p>
+                <p class="card-value" style="margin:0; color:#0f172a; font-size:28px; font-weight:800; line-height:1.1;">${sunset}</p>
+              </div>
+            </div>
+
+            <h2 class="section-title" style="margin:0 0 12px; font-size:18px; font-weight:700; color:#0f172a;">Dica Prática</h2>
+            <div class="tip-box" style="margin:12px 0 16px; padding:14px 16px; border-radius:14px; background:#ecfdf5; border:2px solid #86efac; color:#0f172a; font-size:14px; line-height:1.5;">
+              <strong style="color:#065f46; display:block; margin-bottom:10px; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;">Recomendação do Dia</strong>
+              ${escapeHtml(practicalTip)}
+            </div>
+
+            <h2 class="section-title" style="margin:0 0 12px; font-size:18px; font-weight:700; color:#0f172a;">Mensagem do Dia</h2>
+            <div class="message-card" style="border:2px solid #e2e8f0; border-radius:14px; padding:14px; background:#ffffff;">
+              ${formattedMessage}
+            </div>
+          </div>
+
+          <div class="footer" style="border-top:1px solid #e5e7eb; background:#f8fafc; padding:20px; text-align:center; color:#64748b; font-size:12px; line-height:1.6;">
+            <div>Você está recebendo este e-mail porque se inscreveu no Clima Certo.</div>
+            <a href="${unsubscribeLink}" class="unsubscribe-btn" style="display:inline-block; margin-top:8px; padding:8px 16px; border-radius:999px; border:1px solid #fecaca; background:#fff1f2; color:#be123c; text-decoration:none; font-weight:600; font-size:12px;">Cancelar Inscrição</a>
+            <div style="margin-top: 10px;">© ${new Date().getFullYear()} Clima Certo</div>
+          </div>
         </div>
-        <div class="card-grid-item">
-          <p class="card-label">Pôr do Sol</p>
-          <p class="card-value" style="font-size: 28px;">${sunset}</p>
-        </div>
-      </div>
-
-      <h2 class="section-title">Dica Prática</h2>
-      <div class="tip-box">
-        <strong>Recomendação do Dia</strong>
-        ${escapeHtml(practicalTip)}
-      </div>
-
-      <h2 class="section-title">Mensagem do Dia</h2>
-      <div class="message-card">
-        ${formattedMessage}
-      </div>
-    </div>
-
-    <div class="footer">
-      <div>Você está recebendo este e-mail porque se inscreveu no Clima Certo.</div>
-      <a href="${unsubscribeLink}" class="unsubscribe-btn">Cancelar Inscrição</a>
-      <div style="margin-top: 10px;">© ${new Date().getFullYear()} Clima Certo</div>
-    </div>
-  </div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
   `;
