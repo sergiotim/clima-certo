@@ -14,13 +14,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Update subscriber to inactive using admin client (bypasses RLS)
-    const { data, error, count } = await supabaseAdmin
+    // Update subscriber to inactive.
+    // Using count without select avoids needing an extra SELECT policy when RLS is enabled.
+    const { error, count } = await supabaseAdmin
       .from("newsletter_subscribers")
-      .update({ active: false })
+      .update({ active: false }, { count: "exact" })
       .eq("id", token)
-      .eq("active", true)
-      .select();
+      .eq("active", true);
 
     if (error) {
       console.error("Supabase error:", error);
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!data || data.length === 0) {
+    if (!count || count === 0) {
       // Token not found or already inactive
       return NextResponse.json(
         { error: "Token inválido ou já desinscrição já foi processada." },
